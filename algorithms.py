@@ -33,25 +33,25 @@ def setup():
     CURSOR.execute("""
     CREATE TABLE Additional_Color_2 (
         Clothing_ID INT PRIMARY KEY,
-        Color TEXT NOT NULL
+        Data TEXT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Color_3 (
         Clothing_ID INT PRIMARY KEY,
-        Color TEXT NOT NULL
+        Data TEXT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Style_2 (
         Clothing_ID INT PRIMARY KEY,
-        Style TEXT NOT NULL
+        Data TEXT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Fabric_2 (
         Clothing_ID INT PRIMARY KEY,
-        Fabric TEXT NOT NULL
+        Data TEXT NOT NULL
     )
     ;""")
     CURSOR.execute("""
@@ -68,43 +68,43 @@ def setup():
     CURSOR.execute("""
     CREATE TABLE Additional_Sweater (
         Outfit_ID INT PRIMARY KEY,
-        Sweater INT NOT NULL
+        Clothing_ID INT NOT NULL
     )
     ;""")
     CURSOR.execute(f"""
     CREATE TABLE Additional_Jacket (
         Outfit_ID INT PRIMARY KEY,
-        Jacket INT NOT NULL
+        Clothing_ID INT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Accessory_1 (
         Outfit_ID INT PRIMARY KEY,
-        Accessory INT NOT NULL
+        Clothing_ID INT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Accessory_2 (
         Outfit_ID INT PRIMARY KEY,
-        Accessory INT NOT NULL
+        Clothing_ID INT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Accessory_3 (
         Outfit_ID INT PRIMARY KEY,
-        Accessory INT NOT NULL
+        Clothing_ID INT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Accessory_4 (
         Outfit_ID INT PRIMARY KEY,
-        Accessory INT NOT NULL
+        Clothing_ID INT NOT NULL
     )
     ;""")
     CURSOR.execute("""
     CREATE TABLE Additional_Accessory_5 (
         Outfit_ID INT PRIMARY KEY,
-        Accessory INT NOT NULL
+        Clothing_ID INT NOT NULL
     );
     """)
     CONNECTION.commit()
@@ -162,8 +162,8 @@ def recentClothingID():
         ORDER BY
             Clothing_ID DESC
     """).fetchone()
-    if RECENT_PRIMARY_KEY[0] is None:
-        RECENT_PRIMARY_KEY[0] = 999  # all primary keys have 4 digits
+    if RECENT_PRIMARY_KEY is None:
+        RECENT_PRIMARY_KEY = [999]  # all primary keys have 4 digits
     return RECENT_PRIMARY_KEY[0]
 
 
@@ -230,7 +230,7 @@ def deleteClothing(CLOTHING_ID):
     :param CLOTHING_ID: integer
     :return: none
     """
-    global CURSOR, CONNECTION
+    global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
 
     # Main clothing
     CURSOR.execute("""
@@ -250,6 +250,79 @@ def deleteClothing(CLOTHING_ID):
         ;""")
 
 
+def getExistingInfo(CLOTHING_PRIMARY_KEY):
+    """
+    Gets all the information about the clothing with the primary key
+    :param CLOTHING_PRIMARY_KEY: int
+    :return: list
+    """
+    global CURSOR
+    FILLED_INFORMATION = CURSOR.execute("""
+    SELECT
+        *
+    FROM
+        Clothing
+    WHERE
+        Clothing_ID = ?
+    ;""", [CLOTHING_PRIMARY_KEY]).fetchone()
+
+    # turn clothing information into a list, not a tuple
+    CLOTHING_INFORMATION = []
+    for INFORMATION in FILLED_INFORMATION:
+        CLOTHING_INFORMATION.append(INFORMATION)
+
+    # Find additional information
+    ADDITIONAL_COLOR_2 = CURSOR.execute("""
+    SELECT
+        Data
+    FROM
+        Additional_Color_2
+    WHERE
+        Clothing_ID = ?
+    ;""", [CLOTHING_PRIMARY_KEY]).fetchone()
+    ADDITIONAL_COLOR_3 = CURSOR.execute("""
+    SELECT
+        Data
+    FROM
+        Additional_Color_3
+    WHERE
+        Clothing_ID = ?
+    ;""", [CLOTHING_PRIMARY_KEY]).fetchone()
+    ADDITIONAL_FABRIC_2 = CURSOR.execute("""
+    SELECT
+        Data
+    FROM
+        Additional_Fabric_2
+    WHERE
+        Clothing_ID = ?
+    ;""", [CLOTHING_PRIMARY_KEY]).fetchone()
+    ADDITIONAL_STYLE_2 = CURSOR.execute("""
+    SELECT
+        Data
+    FROM
+        Additional_Style_2
+    WHERE
+        Clothing_ID = ?
+    ;""", [CLOTHING_PRIMARY_KEY]).fetchone()
+
+    # Format list
+    CLOTHING_INFORMATION[2] = [CLOTHING_INFORMATION[2]]
+    CLOTHING_INFORMATION[3] = [CLOTHING_INFORMATION[3]]
+    CLOTHING_INFORMATION[4] = [CLOTHING_INFORMATION[4]]
+
+    # Add additional information if it is not null
+    if ADDITIONAL_COLOR_2 is not None:
+        CLOTHING_INFORMATION[2].append(ADDITIONAL_COLOR_2[0])
+    if ADDITIONAL_COLOR_3 is not None:
+        CLOTHING_INFORMATION[2].append(ADDITIONAL_COLOR_3[0])
+    if ADDITIONAL_STYLE_2 is not None:
+        CLOTHING_INFORMATION[3].append(ADDITIONAL_STYLE_2[0])
+    if ADDITIONAL_FABRIC_2 is not None:
+        CLOTHING_INFORMATION[4].append(ADDITIONAL_FABRIC_2[0])
+
+    return CLOTHING_INFORMATION
+
+
 def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     """
     Updates clothing with new info
@@ -257,8 +330,16 @@ def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     :param NEW_INFORMATION: list
     :return: none
     """
-    global CURSOR, CONNECTION
+    global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
+    # Find existing information
+    EXISTING_INFORMATION = getExistingInfo(CLOTHING_PRIMARY_KEY)
+
     # Get information in main table
+    for i in range(len(NEW_INFORMATION)):
+        if NEW_INFORMATION[i] is None or NEW_INFORMATION[i] == "":
+            NEW_INFORMATION[i] = EXISTING_INFORMATION[i + 1]  # Fill in with existing information
+
+    # non empty information does not get deleted, will get updated
     NON_EMPTY_INFORMATION = [
         NEW_INFORMATION[0],
         NEW_INFORMATION[1][0],
@@ -270,8 +351,28 @@ def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
         NEW_INFORMATION[7],
         CLOTHING_PRIMARY_KEY]
     # Get information in side tables
+    # Feature of program: if additional are left empty, then it is deleted
+    # Make sure indices exist
+    while len(EXISTING_INFORMATION[2]) < 3:
+        EXISTING_INFORMATION[2].append(None)
+    while len(EXISTING_INFORMATION[3]) < 2:
+        EXISTING_INFORMATION[3].append(None)
+    while len(EXISTING_INFORMATION[4]) < 2:
+        EXISTING_INFORMATION[4].append(None)
 
-
+    # Format it
+    EXISTING_OPTIONAL_INFORMATION = [
+        EXISTING_INFORMATION[2][1],
+        EXISTING_INFORMATION[2][2],
+        EXISTING_INFORMATION[3][1],
+        EXISTING_INFORMATION[4][1]
+    ]
+    OPTIONAL_INFORMATION = [
+        NEW_INFORMATION[1][1],
+        NEW_INFORMATION[1][2],
+        NEW_INFORMATION[2][1],
+        NEW_INFORMATION[3][1]
+    ]
     # Update
     CURSOR.execute("""
         UPDATE
@@ -289,6 +390,39 @@ def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
             Clothing_ID = ?
     ;""", NON_EMPTY_INFORMATION)
 
+    # Update other tables
+    for i in range(len(OPTIONAL_CLOTHING_DATA)):
+        if OPTIONAL_INFORMATION[i] is not None and OPTIONAL_INFORMATION[i] != "":
+            # columns exist
+            if EXISTING_OPTIONAL_INFORMATION[i] is not None:
+                CURSOR.execute(f"""
+                UPDATE
+                    {OPTIONAL_CLOTHING_DATA[i]}
+                SET
+                    Data = ?
+                WHERE
+                    Clothing_ID = ?
+                ;""", [OPTIONAL_INFORMATION[i], CLOTHING_PRIMARY_KEY])
+            # columns do not exist
+            else:
+                CURSOR.execute(f"""
+                INSERT INTO
+                    {OPTIONAL_CLOTHING_DATA[i]}
+                VALUES (
+                    ?, ?
+                )
+                ;""", [CLOTHING_PRIMARY_KEY, OPTIONAL_INFORMATION[i]])
+        else:  # no information provided for extra fields
+            # columns exist
+            if EXISTING_OPTIONAL_INFORMATION[i] is not None:
+                CURSOR.execute(f"""
+                DELETE FROM
+                    {OPTIONAL_CLOTHING_DATA[i]}
+                WHERE
+                    Clothing_ID = ?
+                ;""", [CLOTHING_PRIMARY_KEY])
+            # else, nothing happens
+    CONNECTION.commit()
 
 
 def createOutfit():
@@ -330,5 +464,6 @@ OPTIONAL_CLOTHING_DATA = ("Additional_Color_2", "Additional_Color_3",
 if __name__ == "__main__":
     if FIRST_RUN:  # create tables
         setup()
-    insertNewClothing(inputNewClothing())
+    print(getExistingInfo(1000))
+    updateClothing(1001, inputNewClothing())
     # deleteClothing(1)
