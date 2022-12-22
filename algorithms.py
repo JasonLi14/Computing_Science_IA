@@ -58,11 +58,11 @@ def setup():
     CREATE TABLE Outfits (
         Outfit_ID INT PRIMARY KEY,
         Name TEXT NOT NULL,
-        Rating INT NOT NULL,
         Top INT NOT NULL,
         Bottom INT NOT NULL,
         Shoes INT NOT NULL,
-        Comment INT NOT NULL
+        Comment INT NOT NULL,
+        Rating INT NOT NULL
     )
     ;""")
     CURSOR.execute("""
@@ -143,7 +143,36 @@ def inputEditClothing():
 
 
 def inputOutfit():
-    pass
+    """
+    Get user input for the outfit
+    :return: list
+    """
+    """
+        Name TEXT NOT NULL,
+        Top INT NOT NULL,
+        Bottom INT NOT NULL,
+        Shoes INT NOT NULL,
+        Comment INT NOT NULL,
+        Rating INT NOT NULL
+    """
+    OUTFIT_NAME = input("Outfit: ")
+    TOP_ID = int(input("Top: "))
+    BOTTOM_ID = int(input("Bottom: "))
+    SHOES_ID = int(input("Shoes: "))
+    SWEATER_ID = int(input("Sweater: "))
+    JACKET_ID = int(input("Jacket: "))
+    ACCESSORY_1_ID = int(input("Accessory 1: "))
+    ACCESSORY_2_ID = int(input("Accessory 2: "))
+    ACCESSORY_3_ID = int(input("Accessory 3: "))
+    ACCESSORY_4_ID = int(input("Accessory 4: "))
+    ACCESSORY_5_ID = int(input("Accessory 5: "))
+    ACCESSORY_LIST = [ACCESSORY_1_ID, ACCESSORY_2_ID, ACCESSORY_3_ID, ACCESSORY_4_ID, ACCESSORY_5_ID]
+    COMMENT = input("Comment: ")
+    RATING = int(input("Rating: "))
+
+    # Format of information: name, top, bottom, shoes, sweater, jacket, accessories, comment, rating
+    return [OUTFIT_NAME, TOP_ID, BOTTOM_ID, SHOES_ID, SWEATER_ID,
+            JACKET_ID, ACCESSORY_LIST, COMMENT, RATING]
 
 
 # Processing
@@ -161,6 +190,26 @@ def recentClothingID():
             Clothing
         ORDER BY
             Clothing_ID DESC
+    """).fetchone()
+    if RECENT_PRIMARY_KEY is None:
+        RECENT_PRIMARY_KEY = [999]  # all primary keys have 4 digits
+    return RECENT_PRIMARY_KEY[0]
+
+
+def recentOutfitID():
+    """
+    Find most recent primary key in outfit table
+    :return: integer
+    """
+    global CURSOR
+    # Go into database
+    RECENT_PRIMARY_KEY = CURSOR.execute("""
+        SELECT
+            Outfit_ID
+        FROM
+            Outfits
+        ORDER BY
+            Outfit_ID DESC
     """).fetchone()
     if RECENT_PRIMARY_KEY is None:
         RECENT_PRIMARY_KEY = [999]  # all primary keys have 4 digits
@@ -248,6 +297,8 @@ def deleteClothing(CLOTHING_ID):
             WHERE
                 Clothing_ID = {CLOTHING_ID}
         ;""")
+
+    CONNECTION.commit()
 
 
 def getExistingInfo(CLOTHING_PRIMARY_KEY):
@@ -425,8 +476,60 @@ def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     CONNECTION.commit()
 
 
-def createOutfit():
-    pass
+def insertOutfit(OUTFIT_INFORMATION):
+    """
+    Inserts new outfit into database
+    :param OUTFIT_INFORMATION: list
+    :return: none
+    """
+    global CURSOR, CONNECTION, OPTIONAL_OUTFIT_DATA
+    # Find new primary key
+    OUTFIT_PRIMARY_KEY = recentOutfitID() + 1
+
+    # Get important information from argument
+    # Want: [name, top, bottom, shoes, comment, rating]
+    # OUTFIT_INFORMATION: [name, top, bottom, shoes, sweater, jacket, accessories, comment, rating]
+    FILLED_INFORMATION = [
+        OUTFIT_PRIMARY_KEY,
+        OUTFIT_INFORMATION[0],
+        OUTFIT_INFORMATION[1],
+        OUTFIT_INFORMATION[2],
+        OUTFIT_INFORMATION[3],
+        OUTFIT_INFORMATION[7],
+        OUTFIT_INFORMATION[8]
+    ]
+
+    # Find optional information: [sweater, jacket, accessories]
+    OPTIONAL_INFORMATION = [
+        OUTFIT_INFORMATION[4],
+        OUTFIT_INFORMATION[5]
+    ]
+    # For accessories to be on one line
+    for ACCESSORY in OUTFIT_INFORMATION[6]:
+        if not(ACCESSORY is None or ACCESSORY == ""):
+            OPTIONAL_INFORMATION.append(ACCESSORY)
+
+    # Insert information that is not null
+    CURSOR.execute("""
+    INSERT INTO
+        Outfits
+    VALUES (
+        ?, ?, ?, ?, ?, ?, ?
+    )
+    ;""", FILLED_INFORMATION)
+
+    # Insert other information in their own tables
+    for i in range(len(OPTIONAL_OUTFIT_DATA)):
+        if not(OPTIONAL_INFORMATION[i] is None or OUTFIT_INFORMATION[i] == ""):
+            CURSOR.execute(f"""
+                INSERT INTO
+                    {OUTFIT_INFORMATION[i]}
+                VALUES (
+                    ?, ?
+                )
+            ;""", [OUTFIT_PRIMARY_KEY, OUTFIT_INFORMATION[i]])
+
+    CONNECTION.commit()
 
 
 def generateOutfit():
@@ -460,10 +563,13 @@ CURSOR = CONNECTION.cursor()
 OPTIONAL_CLOTHING_DATA = ("Additional_Color_2", "Additional_Color_3",
                           "Additional_Style_2", "Additional_Fabric_2")
 
+OPTIONAL_OUTFIT_DATA = ("Additional_Sweater", "Additional_Jacket", "Additional_Accessory_1",
+                        "Additional_Accessory_2", "Additional_Accessory_3",
+                        "Additional_Accessory_4", "Additional_Accessory_5")
 # --- MAIN PROGRAM CODE --- #
 if __name__ == "__main__":
     if FIRST_RUN:  # create tables
         setup()
-    print(getExistingInfo(1000))
-    updateClothing(1001, inputNewClothing())
-    # deleteClothing(1)
+    insertNewClothing(inputNewClothing())
+    # updateClothing(1001, inputNewClothing())
+    # deleteClothing(1001)
