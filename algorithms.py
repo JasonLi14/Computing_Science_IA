@@ -506,7 +506,7 @@ def insertOutfit(OUTFIT_INFORMATION):
     ]
     # For accessories to be on one line
     for ACCESSORY in OUTFIT_INFORMATION[6]:
-        if not(ACCESSORY is None or ACCESSORY == ""):
+        if not(ACCESSORY is None or ACCESSORY == "" or ACCESSORY == 0):
             OPTIONAL_INFORMATION.append(ACCESSORY)
 
     # Insert information that is not null
@@ -519,21 +519,44 @@ def insertOutfit(OUTFIT_INFORMATION):
     ;""", FILLED_INFORMATION)
 
     # Insert other information in their own tables
-    for i in range(len(OPTIONAL_OUTFIT_DATA)):
-        if not(OPTIONAL_INFORMATION[i] is None or OUTFIT_INFORMATION[i] == ""):
+    for i in range(len(OPTIONAL_INFORMATION)):
+        if not(OPTIONAL_INFORMATION[i] is None or OPTIONAL_INFORMATION[i] == "" or OPTIONAL_INFORMATION[i] == 0):
             CURSOR.execute(f"""
                 INSERT INTO
-                    {OUTFIT_INFORMATION[i]}
+                    {OPTIONAL_OUTFIT_DATA[i]}
                 VALUES (
                     ?, ?
                 )
-            ;""", [OUTFIT_PRIMARY_KEY, OUTFIT_INFORMATION[i]])
+            ;""", [OUTFIT_PRIMARY_KEY, OPTIONAL_INFORMATION[i]])
 
     CONNECTION.commit()
 
 
-def generateOutfit():
-    pass
+def generateOutfit(SETTINGS):
+    """
+    Generates outfit when given some settings
+    :param SETTINGS: list [color1, color2, color3, style1, style2, fabric1, fabric2, weather]
+    :return: 2d list
+    """
+    # Initialize arrays
+    TOPS = []
+    BOTTOMS = []
+    SHOES = []
+    SWEATERS = []
+    JACKETS = []
+    ACCESSORIES = []
+    # For colors
+    COLOR_SETTINGS = SETTINGS[0:3]
+    for COLOR in COLOR_SETTINGS:
+        POSSIBLE_CLOTHING = CURSOR.execute("""
+            SELECT 
+                CLOTHING_ID,
+                TYPE
+            FROM
+                Clothing
+            WHERE
+                COLOR1 = ?
+        ;""", [COLOR]).fetchall()
 
 
 def getClothingInformation():
@@ -544,7 +567,7 @@ def getOutfitInformation():
     pass
 
 
-def editOutfit():
+def editOutfit(NEW_OUTFIT_INFORMATION):
     pass
 
 
@@ -570,6 +593,7 @@ OPTIONAL_OUTFIT_DATA = ("Additional_Sweater", "Additional_Jacket", "Additional_A
 if __name__ == "__main__":
     if FIRST_RUN:  # create tables
         setup()
-    insertNewClothing(inputNewClothing())
+    # insertNewClothing(inputNewClothing())
     # updateClothing(1001, inputNewClothing())
     # deleteClothing(1001)
+    insertOutfit(inputOutfit())
