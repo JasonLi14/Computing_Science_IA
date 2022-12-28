@@ -166,7 +166,26 @@ def inputOutfit():
     ACCESSORY_3_ID = int(input("Accessory 3: "))
     ACCESSORY_4_ID = int(input("Accessory 4: "))
     ACCESSORY_5_ID = int(input("Accessory 5: "))
-    ACCESSORY_LIST = [ACCESSORY_1_ID, ACCESSORY_2_ID, ACCESSORY_3_ID, ACCESSORY_4_ID, ACCESSORY_5_ID]
+    ACCESSORY_LIST = []
+
+    # Format accessory list in ascending id
+    # Only sort non-empty
+    if not(ACCESSORY_1_ID is None or ACCESSORY_1_ID == "" or ACCESSORY_1_ID == 0):
+        ACCESSORY_LIST.append(ACCESSORY_1_ID)
+    if not(ACCESSORY_2_ID is None or ACCESSORY_2_ID == "" or ACCESSORY_2_ID == 0):
+        ACCESSORY_LIST.append(ACCESSORY_2_ID)
+    if not(ACCESSORY_3_ID is None or ACCESSORY_3_ID == "" or ACCESSORY_3_ID == 0):
+        ACCESSORY_LIST.append(ACCESSORY_3_ID)
+    if not(ACCESSORY_4_ID is None or ACCESSORY_4_ID == "" or ACCESSORY_4_ID == 0):
+        ACCESSORY_LIST.append(ACCESSORY_4_ID)
+    if not(ACCESSORY_5_ID is None or ACCESSORY_5_ID == "" or ACCESSORY_5_ID == 0):
+        ACCESSORY_LIST.append(ACCESSORY_5_ID)
+    ACCESSORY_LIST.sort()
+
+    # Get to length of 5
+    while len(ACCESSORY_LIST) < 5:
+        ACCESSORY_LIST.append(None)
+
     COMMENT = input("Comment: ")
     RATING = int(input("Rating: "))
 
@@ -270,7 +289,31 @@ def insertNewClothing(CLOTHING_INFORMATION):
 
 
 def deleteOutfit(OUTFIT_ID):
-    pass
+    """
+    Deletes outfit with the outfit id
+    :param OUTFIT_ID: int
+    :return: none
+    """
+    global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
+
+    # Main outfit table
+    CURSOR.execute("""
+    DELETE FROM
+        Outfits
+    WHERE
+        Outfit_ID = ?
+    ;""", [OUTFIT_ID])
+
+    # Side accessory tables
+    for ADDITIONAL_TABLE in OPTIONAL_OUTFIT_DATA:
+        CURSOR.execute(f"""
+            DELETE FROM
+                {ADDITIONAL_TABLE}
+            WHERE
+                Outfit_ID = {OUTFIT_ID}
+        ;""")
+
+    CONNECTION.commit()
 
 
 def deleteClothing(CLOTHING_ID):
@@ -301,7 +344,7 @@ def deleteClothing(CLOTHING_ID):
     CONNECTION.commit()
 
 
-def getExistingInfo(CLOTHING_PRIMARY_KEY):
+def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
     """
     Gets all the information about the clothing with the primary key
     :param CLOTHING_PRIMARY_KEY: int
@@ -374,6 +417,43 @@ def getExistingInfo(CLOTHING_PRIMARY_KEY):
     return CLOTHING_INFORMATION
 
 
+def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
+    """
+    Gets all the information about the clothing with the primary key
+    :param OUTFIT_PRIMARY_KEY: int
+    :return: list, list
+    """
+    global CURSOR, OPTIONAL_OUTFIT_DATA
+    FILLED_INFORMATION = CURSOR.execute("""
+    SELECT
+        *
+    FROM
+        Outfits
+    WHERE
+        Outfit_ID = ?
+    ;""", [OUTFIT_PRIMARY_KEY]).fetchone()
+
+    # turn clothing information into a list, not a tuple
+    OUTFIT_INFORMATION = []
+    for INFORMATION in FILLED_INFORMATION:
+        OUTFIT_INFORMATION.append(INFORMATION)
+
+    # Find additional information
+    OPTIONAL_OUTFIT_INFORMATION = []
+    for i in range(len(OPTIONAL_OUTFIT_DATA)):
+        OPTIONAL_ITEM = CURSOR.execute(f"""
+            SELECT
+                Clothing_ID
+            FROM
+                {OPTIONAL_OUTFIT_DATA[i]}
+            WHERE
+                Outfit_ID = ?
+        ;""", [OUTFIT_PRIMARY_KEY])
+        OPTIONAL_OUTFIT_INFORMATION.append(OPTIONAL_ITEM)
+
+    return FILLED_INFORMATION, OPTIONAL_OUTFIT_INFORMATION
+
+
 def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     """
     Updates clothing with new info
@@ -383,7 +463,7 @@ def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     """
     global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
     # Find existing information
-    EXISTING_INFORMATION = getExistingInfo(CLOTHING_PRIMARY_KEY)
+    EXISTING_INFORMATION = getExistingClothingInfo(CLOTHING_PRIMARY_KEY)
 
     # Get information in main table
     for i in range(len(NEW_INFORMATION)):
@@ -567,8 +647,97 @@ def getOutfitInformation():
     pass
 
 
-def editOutfit(NEW_OUTFIT_INFORMATION):
-    pass
+def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
+    """
+    Edit existing outfits with new information
+    :param OUTFIT_PRIMARY_KEY: int
+    :param NEW_OUTFIT_INFORMATION: list
+    :return: none
+    """
+    global CURSOR, CONNECTION, OPTIONAL_OUTFIT_DATA
+
+    FILLED_INFORMATION = [
+        NEW_OUTFIT_INFORMATION[0],
+        NEW_OUTFIT_INFORMATION[1],
+        NEW_OUTFIT_INFORMATION[2],
+        NEW_OUTFIT_INFORMATION[3],
+        NEW_OUTFIT_INFORMATION[7],
+        NEW_OUTFIT_INFORMATION[8],
+        OUTFIT_PRIMARY_KEY
+    ]
+
+    # Find optional information: [sweater, jacket, accessories]
+    OPTIONAL_INFORMATION = [
+        NEW_OUTFIT_INFORMATION[4],
+        NEW_OUTFIT_INFORMATION[5],
+    ]
+
+    # For accessories to be on one line
+    for ACCESSORY in NEW_OUTFIT_INFORMATION[6]:
+        if not (ACCESSORY is None or ACCESSORY == "" or ACCESSORY == 0):
+            OPTIONAL_INFORMATION.append(ACCESSORY)
+        else:
+            # Make them none as placeholder
+            OPTIONAL_INFORMATION.append(None)
+
+    # Find existing information
+    EXISTING_FILLED_INFORMATION, EXISTING_OPTIONAL_INFORMATION = getExistingOutfitInfo(OUTFIT_PRIMARY_KEY)
+
+    # Replace filled information with existing information
+    for i in range(len(FILLED_INFORMATION)):
+        if i != 6 and (FILLED_INFORMATION[i] == 0 or FILLED_INFORMATION[i] is None or FILLED_INFORMATION[i] == ""):
+            FILLED_INFORMATION[i] = EXISTING_FILLED_INFORMATION[i]
+
+    # Main table
+    CURSOR.execute("""
+    UPDATE
+        Outfits
+    SET 
+        Name = ?,
+        Rating = ?,
+        Top = ?,
+        Bottom = ?,
+        Shoes = ?,
+        Comment = ?
+    WHERE
+        Outfit_ID = ?
+    ;""", FILLED_INFORMATION)
+
+    # Side tables
+    # Update other tables
+    for i in range(len(OPTIONAL_OUTFIT_DATA)):
+        if OPTIONAL_INFORMATION[i] is not None and OPTIONAL_INFORMATION[i] != "" and OPTIONAL_INFORMATION[i] != 0:
+            # columns exist
+            if EXISTING_OPTIONAL_INFORMATION[i] is not None:
+                # Regular update
+                CURSOR.execute(f"""
+                    UPDATE
+                        {OPTIONAL_OUTFIT_DATA[i]}
+                    SET
+                        Clothing_ID = ?
+                    WHERE
+                        Outfit_ID = ?
+                    ;""", [OPTIONAL_INFORMATION[i], OUTFIT_PRIMARY_KEY])
+            else:  # columns do not exist
+                # Have to insert
+                CURSOR.execute(f"""
+                    INSERT INTO
+                        {OPTIONAL_OUTFIT_DATA[i]}
+                    VALUES (
+                        ?, ?
+                    )
+                    ;""", [OUTFIT_PRIMARY_KEY, OPTIONAL_INFORMATION[i]])
+        else:  # no information provided for extra fields
+            # columns exist
+            if EXISTING_OPTIONAL_INFORMATION[i] is not None:
+                CURSOR.execute(f"""
+                    DELETE FROM
+                        {OPTIONAL_OUTFIT_DATA[i]}
+                    WHERE
+                        Outfit_ID = ?
+                    ;""", [OUTFIT_PRIMARY_KEY])
+            # else, nothing happens
+    CONNECTION.commit()
 
 
 # Output
@@ -596,4 +765,6 @@ if __name__ == "__main__":
     # insertNewClothing(inputNewClothing())
     # updateClothing(1001, inputNewClothing())
     # deleteClothing(1001)
-    insertOutfit(inputOutfit())
+    # insertOutfit(inputOutfit())
+    # deleteOutfit(1000)
+    editOutfit(1000, inputOutfit())
