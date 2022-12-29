@@ -7,6 +7,7 @@ Date: December 16, 2022
 import pathlib
 import sqlite3
 import flask
+from itertools import combinations
 
 
 # --- SUBROUTINES --- #
@@ -470,7 +471,7 @@ def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
         if NEW_INFORMATION[i] is None or NEW_INFORMATION[i] == "":
             NEW_INFORMATION[i] = EXISTING_INFORMATION[i + 1]  # Fill in with existing information
 
-    # non empty information does not get deleted, will get updated
+    # non-empty information does not get deleted, will get updated
     NON_EMPTY_INFORMATION = [
         NEW_INFORMATION[0],
         NEW_INFORMATION[1][0],
@@ -612,31 +613,294 @@ def insertOutfit(OUTFIT_INFORMATION):
     CONNECTION.commit()
 
 
+def combineListsNoDuplicates(LIST_1, LIST_2, LIST_3=(), LIST_4=()):
+    """
+    Combines all lists in parameters
+    :param LIST_1: list
+    :param LIST_2: list
+    :param LIST_3: list
+    :param LIST_4: list
+    :return: list
+    """
+    # Combine all together
+    COMBINED_LIST = LIST_1 + LIST_2 + LIST_3 + LIST_4
+    # Get rid of duplicates
+    return list(set(COMBINED_LIST))
+
+
+def intersectionOfLists(LIST_1, LIST_2):
+    """
+    Returns list of only values that are in both lists
+    :param LIST_1: list
+    :param LIST_2: list
+    :return: list
+    """
+    INTERSECTION_LIST = []
+    # If there is a none, then return other list (i.e. those settings not selected)
+    if LIST_1 is None and LIST_2 is None:
+        return None
+    elif LIST_1 is None:
+        return LIST_2
+    elif LIST_2 is None:
+        return LIST_1
+    else:
+        for ITEM in LIST_1:
+            if ITEM in LIST_2:
+                INTERSECTION_LIST.append(ITEM)
+
+    return INTERSECTION_LIST
+
+
+def getScore(OUTFIT):
+    """
+    For sorting, the key
+    :param OUTFIT: list
+    :return: int
+    """
+    return OUTFIT[1]
+
+
 def generateOutfit(SETTINGS):
     """
     Generates outfit when given some settings
     :param SETTINGS: list [color1, color2, color3, style1, style2, fabric1, fabric2, weather]
     :return: 2d list
     """
-    # Initialize arrays
+
+    # Split SETTINGS into its categories
+    COLOR_SETTINGS = SETTINGS[0:3]
+    STYLE_SETTINGS = SETTINGS[3:5]
+    FABRIC_SETTINGS = SETTINGS[5:7]
+    WEATHER_SETTING = SETTINGS[8]
+
+    # Initialize possible clothing lists to do operations
+    if len(COLOR_SETTINGS) > 0:
+        POSSIBLE_CLOTHING_COLOR = []
+    else:
+        POSSIBLE_CLOTHING_COLOR = None
+    if len(STYLE_SETTINGS) > 0:
+        POSSIBLE_CLOTHING_STYLE = []
+    else:
+        POSSIBLE_CLOTHING_STYLE = None
+    if len(FABRIC_SETTINGS) > 0:
+        POSSIBLE_CLOTHING_FABRIC = []
+    else:
+        POSSIBLE_CLOTHING_FABRIC = None
+
+    # For colors
+    for COLOR in COLOR_SETTINGS:  # This finds all clothing with the color as one of their colors
+        COLOR_1_CLOTHING = CURSOR.execute("""
+            SELECT 
+                Clothing_ID,
+                Type
+            FROM
+                Clothing
+            WHERE
+                Color1 = ?
+        ;""", [COLOR]).fetchall()
+        COLOR_2_CLOTHING = CURSOR.execute("""
+            SELECT
+                Additional_Color_2.Clothing_ID,
+                Clothing.Type
+            FROM 
+                Additional_Color_2
+            JOIN
+                Clothing
+            ON
+                Additional_Color_2.Clothing_ID = Clothing.Clothing_ID
+            WHERE
+                Additional_Color_2.Data = ?
+        ;""", [COLOR]).fetchall()
+        COLOR_3_CLOTHING = CURSOR.execute("""
+            SELECT
+                Additional_Color_3.Clothing_ID,
+                Clothing.Type
+            FROM 
+                Additional_Color_3
+            JOIN
+                Clothing
+            ON
+                Additional_Color_3.Clothing_ID = Clothing.Clothing_ID
+            WHERE
+                Additional_Color_3.Data = ?
+        ;""", [COLOR]).fetchall()
+        # Combine lists together
+        POSSIBLE_CLOTHING_COLOR = combineListsNoDuplicates(COLOR_1_CLOTHING, COLOR_2_CLOTHING, COLOR_3_CLOTHING)
+
+    # For styles
+    for STYLE in STYLE_SETTINGS:
+        STYLE_1_CLOTHING = CURSOR.execute("""
+            SELECT 
+                Clothing_ID,
+                Type
+            FROM
+                Clothing
+            WHERE
+                Style1 = ?
+        ;""", [STYLE]).fetchall()
+        STYLE_2_CLOTHING = CURSOR.execute("""
+            SELECT
+                Additional_Style_2.Clothing_ID,
+                Clothing.Type
+            FROM 
+                Additional_Style_2
+            JOIN
+                Clothing
+            ON
+                Additional_Style_2.Clothing_ID = Clothing.Clothing_ID
+            WHERE
+                Additional_Style_2.Data = ?
+        ;""", [STYLE]).fetchall()
+        POSSIBLE_CLOTHING_STYLE = combineListsNoDuplicates(STYLE_1_CLOTHING, STYLE_2_CLOTHING)
+
+    # For fabrics
+    for FABRIC in FABRIC_SETTINGS:
+        FABRIC_1_CLOTHING = CURSOR.execute("""
+            SELECT 
+                Clothing_ID,
+                Type
+            FROM
+                Clothing
+            WHERE
+                Fabric1 = ?
+        ;""", [FABRIC]).fetchall()
+        FABRIC_2_CLOTHING = CURSOR.execute("""
+            SELECT
+                Additional_Fabric_2.Clothing_ID,
+                Clothing.Type
+            FROM 
+                Additional_Fabric_2
+            JOIN
+                Clothing
+            ON
+                Additional_Fabric_2.Clothing_ID = Clothing.Clothing_ID
+            WHERE
+                Additional_Fabric_2.Data = ?
+        ;""", [FABRIC]).fetchall()
+        POSSIBLE_CLOTHING_FABRIC = combineListsNoDuplicates(FABRIC_1_CLOTHING, FABRIC_2_CLOTHING)
+
+    if WEATHER_SETTING != "" and WEATHER_SETTING is not None:
+        # For weather
+        POSSIBLE_CLOTHING_WEATHER = CURSOR.execute("""
+            SELECT
+                Clothing_ID,
+                Type
+            FROM
+                Clothing
+            WHERE
+                Weather = ?
+            OR
+                Weather = Neutral
+        ;""", [WEATHER_SETTING]).fetchall()
+    else:
+        POSSIBLE_CLOTHING_WEATHER = None
+
+    # Get intersections of lists
+    CLOTHING_COLOR_AND_STYLE = intersectionOfLists(POSSIBLE_CLOTHING_COLOR, POSSIBLE_CLOTHING_STYLE)
+    CLOTHING_FABRIC_AND_WEATHER = intersectionOfLists(POSSIBLE_CLOTHING_FABRIC, POSSIBLE_CLOTHING_WEATHER)
+    # Find clothing that meets settings
+    QUALIFIED_CLOTHING = intersectionOfLists(CLOTHING_COLOR_AND_STYLE, CLOTHING_FABRIC_AND_WEATHER)
+
+    # Separate clothing into their types
+
+    # Initialize categories
     TOPS = []
     BOTTOMS = []
     SHOES = []
     SWEATERS = []
     JACKETS = []
     ACCESSORIES = []
-    # For colors
-    COLOR_SETTINGS = SETTINGS[0:3]
-    for COLOR in COLOR_SETTINGS:
-        POSSIBLE_CLOTHING = CURSOR.execute("""
-            SELECT 
-                CLOTHING_ID,
-                TYPE
-            FROM
-                Clothing
-            WHERE
-                COLOR1 = ?
-        ;""", [COLOR]).fetchall()
+
+    # Initialize mandatory and non-mandatory lists
+    ESSENTIALS = []
+    ACCESSORIES_COMBINATIONS = []
+    NON_ESSENTIALS = []
+    OUTFITS = []
+
+    # Iterate over all clothing
+    for ITEM in QUALIFIED_CLOTHING:
+        # Find the type of clothing
+        if ITEM[1] == "Top":
+            TOPS.append(ITEM[0])
+        elif ITEM[1] == "Bottom":
+            BOTTOMS.append(ITEM[0])
+        elif ITEM[1] == "Shoes":
+            SHOES.append(ITEM[0])
+        elif ITEM[1] == "Sweater":
+            SWEATERS.append(ITEM[0])
+        elif ITEM[1] == "Jacket":
+            JACKETS.append(ITEM[0])
+        elif ITEM[1] == "Accessory":
+            ACCESSORIES.append(ITEM[0])
+
+    # Get combinations
+
+    # Find combinations of mandatory parts
+    for TOP in TOPS:
+        for BOTTOM in BOTTOMS:
+            for SHOE in SHOES:
+                ESSENTIALS.append([TOP, BOTTOM, SHOE])
+
+    # Find combinations of accessories
+    for COMBINATION_LENGTH in range(min(len(ACCESSORIES) + 1, 5)):  # combinations from 0 length to 5 length
+        ACCESSORIES_COMBINATIONS.append(list(combinations(ACCESSORIES, COMBINATION_LENGTH)))
+
+    # Find combinations of non-essentials
+    for SWEATER in SWEATERS:
+        for JACKET in JACKETS:
+            for ACCESSORIES_COMBINATION in ACCESSORIES_COMBINATIONS:
+                NON_ESSENTIALS.append([SWEATER, JACKET, ACCESSORIES_COMBINATION])
+
+    # Find combinations of essentials and non-essentials
+    for ESSENTIALS_COMBINATION in ESSENTIALS:
+        for NON_ESSENTIALS_COMBINATION in NON_ESSENTIALS:
+            NEW_OUTFIT = [ESSENTIALS_COMBINATION[0], ESSENTIALS_COMBINATION[1], ESSENTIALS_COMBINATION[2],
+                          NON_ESSENTIALS_COMBINATION[0], NON_ESSENTIALS_COMBINATION[1], NON_ESSENTIALS_COMBINATION[2]]
+            OUTFITS.append(NEW_OUTFIT)
+
+    # Sort outfits
+
+    # Auto-generate outfit score based on rating of individual clothing
+    for i in range(len(OUTFITS)):
+        # Initialize summing variables
+        SUM = 0
+        NUMBER_OF_ITEMS = 0
+        for j in range(len(OUTFITS[i])):
+            # Treat accessories differently
+            if j == 5:
+                for ACCESSORY in OUTFITS[i][j]:
+                    # Find rating
+                    ACCESSORY_RATING = CURSOR.execute("""
+                    SELECT
+                        Score
+                    FROM
+                        Clothing
+                    WHERE
+                        Clothing_ID = ?
+                    ;""", [ACCESSORY]).fetchone()
+                    SUM += ACCESSORY_RATING
+                    NUMBER_OF_ITEMS += 1
+            else:  # everything but accessories
+                # Find rating
+                CLOTHING_RATING = CURSOR.execute("""
+                SELECT
+                    Score
+                FROM
+                    Clothing
+                WHERE
+                    CLOTHING_ID = ?
+                ;""", [OUTFITS[j]]).fetchone()
+                SUM += CLOTHING_RATING
+                NUMBER_OF_ITEMS += 1
+
+        # Find average sum
+        AVERAGE_SUM = SUM/NUMBER_OF_ITEMS
+
+        # Add to outfit list, make score on 100 scale
+        OUTFITS[i] = [OUTFITS[i], AVERAGE_SUM * 10]
+    # Sort list
+    OUTFITS.sort(key=getScore, reverse=True)
+    return OUTFITS
 
 
 def getClothingInformation():
