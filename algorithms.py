@@ -325,6 +325,73 @@ def deleteClothing(CLOTHING_ID):
     """
     global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
 
+    # Find the type of clothing
+    DELETING_CLOTHING_TYPE = CURSOR.execute("""
+        SELECT
+            Type
+        FROM
+            CLOTHING
+        WHERE
+            Clothing_ID = ?
+        ;""", [CLOTHING_ID]).fetchone()
+
+    # Find outfits with this clothing
+
+    # Initialize an array for outfit ids to delete
+    OUTFITS_TO_DELETE = []
+
+    # Check if in main outfit table
+    if DELETING_CLOTHING_TYPE in ["Top", "Bottom", "Shoes"]:
+        TO_DELETE = CURSOR.execute(f"""
+            SELECT
+                Outfit_ID
+            FROM
+                Outfits
+            WHERE
+                {DELETING_CLOTHING_TYPE} = ?
+        ;""", [CLOTHING_ID]).fetchall()
+        OUTFITS_TO_DELETE += TO_DELETE
+
+    # If a sweater or jacket
+    if DELETING_CLOTHING_TYPE in ["Sweater", "Jacket"]:
+        TO_DELETE = CURSOR.execute(f"""
+            SELECT
+                Outfit_ID
+            FROM
+                Additional_{DELETING_CLOTHING_TYPE}
+            WHERE
+                Clothing_ID = ?
+        ;""", [CLOTHING_ID]).fetchall()
+        OUTFITS_TO_DELETE += TO_DELETE
+
+    # If an accessory
+    if DELETING_CLOTHING_TYPE == "Accessory":
+        for i in range(5):  # Search in all extra accessory tables
+            TO_DELETE = CURSOR.execute(f"""
+                SELECT
+                    Outfit_ID
+                FROM
+                    Additional_Accessory_{i+1}
+                WHERE
+                    Clothing_ID = ?
+            ;""", [CLOTHING_ID]).fetchall()
+            OUTFITS_TO_DELETE += TO_DELETE
+
+    # Delete the outfits
+    OUTFIT_NAMES = []  # Log the outfits that will be deleted
+    for OUTFIT in OUTFITS_TO_DELETE:
+        # Find names of all the outfits to help inform user
+        NAME = CURSOR.execute(f"""
+        SELECT
+            Name
+        FROM
+            Outfits
+        WHERE
+            Outfit_ID = ?
+        ;""", [OUTFIT]).fetchone()
+        OUTFIT_NAMES += NAME
+        deleteOutfit(OUTFIT)
+
     # Main clothing
     CURSOR.execute("""
         DELETE FROM
@@ -901,14 +968,6 @@ def generateOutfit(SETTINGS):
     # Sort list
     OUTFITS.sort(key=getScore, reverse=True)
     return OUTFITS
-
-
-def getClothingInformation():
-    pass
-
-
-def getOutfitInformation():
-    pass
 
 
 def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
