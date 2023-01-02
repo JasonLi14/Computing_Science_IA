@@ -6,7 +6,6 @@ Date: December 16, 2022
 # --- LIBRARIES --- #
 import pathlib
 import sqlite3
-import flask
 from itertools import combinations
 
 
@@ -17,7 +16,10 @@ def setup():
     Sets up the database
     :return: None
     """
-    global CONNECTION, CURSOR  # to set up database
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
+
     CURSOR.execute("""
     CREATE TABLE Clothing (
         Clothing_ID INT PRIMARY KEY,
@@ -109,6 +111,7 @@ def setup():
     );
     """)
     CONNECTION.commit()
+    CONNECTION.close()
 
 
 def inputNewClothing():
@@ -171,15 +174,15 @@ def inputOutfit():
 
     # Format accessory list in ascending id
     # Only sort non-empty
-    if not(ACCESSORY_1_ID is None or ACCESSORY_1_ID == "" or ACCESSORY_1_ID == 0):
+    if not (ACCESSORY_1_ID is None or ACCESSORY_1_ID == "" or ACCESSORY_1_ID == 0):
         ACCESSORY_LIST.append(ACCESSORY_1_ID)
-    if not(ACCESSORY_2_ID is None or ACCESSORY_2_ID == "" or ACCESSORY_2_ID == 0):
+    if not (ACCESSORY_2_ID is None or ACCESSORY_2_ID == "" or ACCESSORY_2_ID == 0):
         ACCESSORY_LIST.append(ACCESSORY_2_ID)
-    if not(ACCESSORY_3_ID is None or ACCESSORY_3_ID == "" or ACCESSORY_3_ID == 0):
+    if not (ACCESSORY_3_ID is None or ACCESSORY_3_ID == "" or ACCESSORY_3_ID == 0):
         ACCESSORY_LIST.append(ACCESSORY_3_ID)
-    if not(ACCESSORY_4_ID is None or ACCESSORY_4_ID == "" or ACCESSORY_4_ID == 0):
+    if not (ACCESSORY_4_ID is None or ACCESSORY_4_ID == "" or ACCESSORY_4_ID == 0):
         ACCESSORY_LIST.append(ACCESSORY_4_ID)
-    if not(ACCESSORY_5_ID is None or ACCESSORY_5_ID == "" or ACCESSORY_5_ID == 0):
+    if not (ACCESSORY_5_ID is None or ACCESSORY_5_ID == "" or ACCESSORY_5_ID == 0):
         ACCESSORY_LIST.append(ACCESSORY_5_ID)
     ACCESSORY_LIST.sort()
 
@@ -201,7 +204,9 @@ def recentClothingID():
     Find most recent primary key in clothing table
     :return: integer
     """
-    global CURSOR
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     # Go into database
     RECENT_PRIMARY_KEY = CURSOR.execute("""
         SELECT
@@ -213,6 +218,7 @@ def recentClothingID():
     """).fetchone()
     if RECENT_PRIMARY_KEY is None:
         RECENT_PRIMARY_KEY = [999]  # all primary keys have 4 digits
+    CONNECTION.close()
     return RECENT_PRIMARY_KEY[0]
 
 
@@ -221,7 +227,9 @@ def recentOutfitID():
     Find most recent primary key in outfit table
     :return: integer
     """
-    global CURSOR
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     # Go into database
     RECENT_PRIMARY_KEY = CURSOR.execute("""
         SELECT
@@ -233,6 +241,7 @@ def recentOutfitID():
     """).fetchone()
     if RECENT_PRIMARY_KEY is None:
         RECENT_PRIMARY_KEY = [999]  # all primary keys have 4 digits
+    CONNECTION.close()
     return RECENT_PRIMARY_KEY[0]
 
 
@@ -242,7 +251,9 @@ def insertNewClothing(CLOTHING_INFORMATION):
     :param CLOTHING_INFORMATION: list
     :return: none
     """
-    global CURSOR, CONNECTION
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     # FIND PRIMARY KEY
     # Find most recent primary key
     CLOTHING_PRIMARY_KEY = recentClothingID() + 1
@@ -287,6 +298,7 @@ def insertNewClothing(CLOTHING_INFORMATION):
             )
             ;""", [CLOTHING_PRIMARY_KEY, INFORMATION[1]])
     CONNECTION.commit()
+    CONNECTION.close()
 
 
 def deleteOutfit(OUTFIT_ID):
@@ -295,7 +307,9 @@ def deleteOutfit(OUTFIT_ID):
     :param OUTFIT_ID: int
     :return: none
     """
-    global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
+    global DATABASE_NAME, OPTIONAL_CLOTHING_DATA
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
 
     # Main outfit table
     CURSOR.execute("""
@@ -315,6 +329,7 @@ def deleteOutfit(OUTFIT_ID):
         ;""")
 
     CONNECTION.commit()
+    CONNECTION.commit()
 
 
 def deleteClothing(CLOTHING_ID):
@@ -323,7 +338,9 @@ def deleteClothing(CLOTHING_ID):
     :param CLOTHING_ID: integer
     :return: none
     """
-    global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
+    global DATABASE_NAME, OPTIONAL_CLOTHING_DATA
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
 
     # Find the type of clothing
     DELETING_CLOTHING_TYPE = CURSOR.execute("""
@@ -335,7 +352,6 @@ def deleteClothing(CLOTHING_ID):
             Clothing_ID = ?
         ;""", [CLOTHING_ID]).fetchone()
     DELETING_CLOTHING_TYPE = DELETING_CLOTHING_TYPE[0]
-    print(DELETING_CLOTHING_TYPE)
     # Find outfits with this clothing
 
     # Initialize an array for outfit ids to delete
@@ -374,7 +390,7 @@ def deleteClothing(CLOTHING_ID):
                 SELECT
                     Outfit_ID
                 FROM
-                    Additional_Accessory_{i+1}
+                    Additional_Accessory_{i + 1}
                 WHERE
                     Clothing_ID = ?
             ;""", [CLOTHING_ID]).fetchall()
@@ -384,7 +400,6 @@ def deleteClothing(CLOTHING_ID):
     # Delete the outfits
     OUTFIT_NAMES = []  # Log the outfits that will be deleted
 
-    print(OUTFITS_TO_DELETE)
     for OUTFIT in OUTFITS_TO_DELETE:
         # Find names of all the outfits to help inform user
         NAME = CURSOR.execute(f"""
@@ -416,6 +431,7 @@ def deleteClothing(CLOTHING_ID):
         ;""")
 
     CONNECTION.commit()
+    CONNECTION.close()
     return OUTFIT_NAMES
 
 
@@ -425,7 +441,9 @@ def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
     :param CLOTHING_PRIMARY_KEY: int
     :return: list
     """
-    global CURSOR
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     FILLED_INFORMATION = CURSOR.execute("""
     SELECT
         Clothing_ID,
@@ -497,6 +515,7 @@ def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
     if ADDITIONAL_FABRIC_2 is not None:
         CLOTHING_INFORMATION[4].append(ADDITIONAL_FABRIC_2[0])
 
+    CONNECTION.close()
     return CLOTHING_INFORMATION
 
 
@@ -506,7 +525,9 @@ def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
     :param OUTFIT_PRIMARY_KEY: int
     :return: list, list
     """
-    global CURSOR, OPTIONAL_OUTFIT_DATA
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     FILLED_INFORMATION = CURSOR.execute("""
     SELECT
         Name,
@@ -540,6 +561,7 @@ def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
         ;""", [OUTFIT_PRIMARY_KEY]).fetchone()
         OPTIONAL_OUTFIT_INFORMATION.append(OPTIONAL_ITEM)
 
+    CONNECTION.close()
     return FILLED_INFORMATION, OPTIONAL_OUTFIT_INFORMATION
 
 
@@ -550,7 +572,9 @@ def editClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     :param NEW_INFORMATION: list
     :return: none
     """
-    global CURSOR, CONNECTION, OPTIONAL_CLOTHING_DATA
+    global DATABASE_NAME, OPTIONAL_OUTFIT_DATA, OPTIONAL_CLOTHING_DATA
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     # Find existing information
     EXISTING_INFORMATION = getExistingClothingInfo(CLOTHING_PRIMARY_KEY)
 
@@ -651,7 +675,10 @@ def insertOutfit(OUTFIT_INFORMATION):
     :param OUTFIT_INFORMATION: list
     :return: none
     """
-    global CURSOR, CONNECTION, OPTIONAL_OUTFIT_DATA
+    global DATABASE_NAME, OPTIONAL_OUTFIT_DATA
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
+
     # Find new primary key
     OUTFIT_PRIMARY_KEY = recentOutfitID() + 1
 
@@ -675,7 +702,7 @@ def insertOutfit(OUTFIT_INFORMATION):
     ]
     # For accessories to be on one line
     for ACCESSORY in OUTFIT_INFORMATION[6]:
-        if not(ACCESSORY is None or ACCESSORY == "" or ACCESSORY == 0):
+        if not (ACCESSORY is None or ACCESSORY == "" or ACCESSORY == 0):
             OPTIONAL_INFORMATION.append(ACCESSORY)
 
     # Insert information that is not null
@@ -697,7 +724,7 @@ def insertOutfit(OUTFIT_INFORMATION):
 
     # Insert other information in their own tables
     for i in range(len(OPTIONAL_INFORMATION)):
-        if not(OPTIONAL_INFORMATION[i] is None or OPTIONAL_INFORMATION[i] == "" or OPTIONAL_INFORMATION[i] == 0):
+        if not (OPTIONAL_INFORMATION[i] is None or OPTIONAL_INFORMATION[i] == "" or OPTIONAL_INFORMATION[i] == 0):
             CURSOR.execute(f"""
                 INSERT INTO
                     {OPTIONAL_OUTFIT_DATA[i]} (
@@ -709,6 +736,7 @@ def insertOutfit(OUTFIT_INFORMATION):
             ;""", [OUTFIT_PRIMARY_KEY, OPTIONAL_INFORMATION[i]])
 
     CONNECTION.commit()
+    CONNECTION.close()
 
 
 def combineListsNoDuplicates(LIST_1, LIST_2, LIST_3=(), LIST_4=()):
@@ -721,7 +749,7 @@ def combineListsNoDuplicates(LIST_1, LIST_2, LIST_3=(), LIST_4=()):
     :return: list
     """
     # Combine all together
-    COMBINED_LIST = LIST_1 + LIST_2 + LIST_3 + LIST_4
+    COMBINED_LIST = list(LIST_1) + list(LIST_2) + list(LIST_3) + list(LIST_4)
     # Get rid of duplicates
     return list(set(COMBINED_LIST))
 
@@ -764,24 +792,44 @@ def generateOutfit(SETTINGS):
     :param SETTINGS: list [color1, color2, color3, style1, style2, fabric1, fabric2, weather]
     :return: 2d list
     """
-
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
     # Split SETTINGS into its categories
     COLOR_SETTINGS = SETTINGS[0:3]
     STYLE_SETTINGS = SETTINGS[3:5]
     FABRIC_SETTINGS = SETTINGS[5:7]
-    WEATHER_SETTING = SETTINGS[8]
+    WEATHER_SETTING = SETTINGS[7]
+
+    # Get rid of nones
+
+    for i in range(len(COLOR_SETTINGS) - 1, -1, -1):
+        if COLOR_SETTINGS[i] is None or COLOR_SETTINGS == 0 or COLOR_SETTINGS == "":
+            COLOR_SETTINGS.pop(i)
+    for i in range(len(STYLE_SETTINGS) - 1, -1, -1):
+        if STYLE_SETTINGS[i] is None or STYLE_SETTINGS == 0 or STYLE_SETTINGS == "":
+            STYLE_SETTINGS.pop(i)
+    for i in range(len(FABRIC_SETTINGS) - 1, -1, -1):
+        if FABRIC_SETTINGS[i] is None or FABRIC_SETTINGS == 0 or FABRIC_SETTINGS == "":
+            FABRIC_SETTINGS.pop(i)
+
+    # Keep track of what settings were used
+    SETTINGS_USED = []
 
     # Initialize possible clothing lists to do operations
     if len(COLOR_SETTINGS) > 0:
         POSSIBLE_CLOTHING_COLOR = []
+        SETTINGS_USED += COLOR_SETTINGS
     else:
         POSSIBLE_CLOTHING_COLOR = None
     if len(STYLE_SETTINGS) > 0:
         POSSIBLE_CLOTHING_STYLE = []
+        SETTINGS_USED += STYLE_SETTINGS
     else:
         POSSIBLE_CLOTHING_STYLE = None
     if len(FABRIC_SETTINGS) > 0:
         POSSIBLE_CLOTHING_FABRIC = []
+        SETTINGS_USED += FABRIC_SETTINGS
     else:
         POSSIBLE_CLOTHING_FABRIC = None
 
@@ -822,9 +870,10 @@ def generateOutfit(SETTINGS):
             WHERE
                 Additional_Color_3.Data = ?
         ;""", [COLOR]).fetchall()
-        # Combine lists together
-        POSSIBLE_CLOTHING_COLOR = combineListsNoDuplicates(COLOR_1_CLOTHING, COLOR_2_CLOTHING, COLOR_3_CLOTHING)
-
+        # Combine lists together with previous lists
+        POSSIBLE_CLOTHING_COLOR += combineListsNoDuplicates(COLOR_1_CLOTHING, COLOR_2_CLOTHING, COLOR_3_CLOTHING)
+        # Get rid of duplicates
+        POSSIBLE_CLOTHING_COLOR = list(set(POSSIBLE_CLOTHING_COLOR))
     # For styles
     for STYLE in STYLE_SETTINGS:
         STYLE_1_CLOTHING = CURSOR.execute("""
@@ -849,7 +898,8 @@ def generateOutfit(SETTINGS):
             WHERE
                 Additional_Style_2.Data = ?
         ;""", [STYLE]).fetchall()
-        POSSIBLE_CLOTHING_STYLE = combineListsNoDuplicates(STYLE_1_CLOTHING, STYLE_2_CLOTHING)
+        POSSIBLE_CLOTHING_STYLE += combineListsNoDuplicates(STYLE_1_CLOTHING, STYLE_2_CLOTHING)
+        POSSIBLE_CLOTHING_STYLE = list(set(POSSIBLE_CLOTHING_STYLE))
 
     # For fabrics
     for FABRIC in FABRIC_SETTINGS:
@@ -875,9 +925,12 @@ def generateOutfit(SETTINGS):
             WHERE
                 Additional_Fabric_2.Data = ?
         ;""", [FABRIC]).fetchall()
-        POSSIBLE_CLOTHING_FABRIC = combineListsNoDuplicates(FABRIC_1_CLOTHING, FABRIC_2_CLOTHING)
+        POSSIBLE_CLOTHING_FABRIC += combineListsNoDuplicates(FABRIC_1_CLOTHING, FABRIC_2_CLOTHING)
+        POSSIBLE_CLOTHING_FABRIC = list(set(POSSIBLE_CLOTHING_FABRIC))
 
-    if WEATHER_SETTING != "" and WEATHER_SETTING is not None:
+    if WEATHER_SETTING != "" and WEATHER_SETTING is not None and WEATHER_SETTING != 0:
+        # Log weather as a setting
+        SETTINGS_USED.append(WEATHER_SETTING)
         # For weather
         POSSIBLE_CLOTHING_WEATHER = CURSOR.execute("""
             SELECT
@@ -888,7 +941,7 @@ def generateOutfit(SETTINGS):
             WHERE
                 Weather = ?
             OR
-                Weather = Neutral
+                Weather = "Neutral"
         ;""", [WEATHER_SETTING]).fetchall()
     else:
         POSSIBLE_CLOTHING_WEATHER = None
@@ -898,7 +951,6 @@ def generateOutfit(SETTINGS):
     CLOTHING_FABRIC_AND_WEATHER = intersectionOfLists(POSSIBLE_CLOTHING_FABRIC, POSSIBLE_CLOTHING_WEATHER)
     # Find clothing that meets settings
     QUALIFIED_CLOTHING = intersectionOfLists(CLOTHING_COLOR_AND_STYLE, CLOTHING_FABRIC_AND_WEATHER)
-
     # Separate clothing into their types
 
     # Initialize categories
@@ -916,6 +968,9 @@ def generateOutfit(SETTINGS):
     OUTFITS = []
 
     # Iterate over all clothing
+    if QUALIFIED_CLOTHING is None:
+        print("No settings were chosen!")
+        return []
     for ITEM in QUALIFIED_CLOTHING:
         # Find the type of clothing
         if ITEM[1] == "Top":
@@ -944,7 +999,7 @@ def generateOutfit(SETTINGS):
 
     # Find combinations of accessories
     for COMBINATION_LENGTH in range(min(len(ACCESSORIES) + 1, 5)):  # combinations from 0 length to 5 length
-        ACCESSORIES_COMBINATIONS.append(list(combinations(ACCESSORIES, COMBINATION_LENGTH)))
+        ACCESSORIES_COMBINATIONS += list(combinations(ACCESSORIES, COMBINATION_LENGTH))
 
     # Find combinations of non-essentials
     for SWEATER in SWEATERS:
@@ -960,7 +1015,6 @@ def generateOutfit(SETTINGS):
             OUTFITS.append(NEW_OUTFIT)
 
     # Sort outfits
-
     # Auto-generate outfit score based on rating of individual clothing
     for i in range(len(OUTFITS)):
         # Initialize summing variables
@@ -979,29 +1033,47 @@ def generateOutfit(SETTINGS):
                     WHERE
                         Clothing_ID = ?
                     ;""", [ACCESSORY]).fetchone()
-                    SUM += ACCESSORY_RATING
+                    SUM += ACCESSORY_RATING[0]
                     NUMBER_OF_ITEMS += 1
             else:  # everything but accessories
-                # Find rating
-                CLOTHING_RATING = CURSOR.execute("""
-                SELECT
-                    Score
-                FROM
-                    Clothing
-                WHERE
-                    CLOTHING_ID = ?
-                ;""", [OUTFITS[j]]).fetchone()
-                SUM += CLOTHING_RATING
-                NUMBER_OF_ITEMS += 1
+                # Find rating if the clothing exists
+                if OUTFITS[i][j] is not None and OUTFITS[i][j] != 0 and OUTFITS[i][j] != "":
+                    CLOTHING_RATING = CURSOR.execute("""
+                    SELECT
+                        Score
+                    FROM
+                        Clothing
+                    WHERE
+                        Clothing_ID = ?
+                    ;""", [OUTFITS[i][j]]).fetchone()
+                    SUM += CLOTHING_RATING[0]
+                    NUMBER_OF_ITEMS += 1
 
         # Find average sum
-        AVERAGE_SUM = SUM/NUMBER_OF_ITEMS
+        AVERAGE_SUM = SUM / NUMBER_OF_ITEMS
 
         # Add to outfit list, make score on 100 scale
-        OUTFITS[i] = [OUTFITS[i], AVERAGE_SUM * 10]
+        OUTFITS[i] = [OUTFITS[i], int(AVERAGE_SUM * 10)]
     # Sort list
     OUTFITS.sort(key=getScore, reverse=True)
-    return OUTFITS
+
+    # Make new list to translate all the outfit tables into something neater
+    OUTFIT_LIST_NEAT = []
+    for i in range(len(OUTFITS)):
+        # Change accessory list type
+        OUTFITS[i][0][5] = list(OUTFITS[i][0][5])
+        # Get accessory length to 5
+        while len(OUTFITS[i][0][5]) < 5:
+            OUTFITS[i][0][5].append(None)
+
+        # Create a new list [Name, top, bottom, shoes, sweater, jacket, accessories, Comment, Rating
+        OUTFIT_TRANSLATING = [f"Generated Outfit {i}", OUTFITS[i][0][0], OUTFITS[i][0][1], OUTFITS[i][0][2],
+                              OUTFITS[i][0][3], OUTFITS[i][0][4], OUTFITS[i][0][5], ", ".join(SETTINGS_USED),
+                              OUTFITS[i][1]]
+        OUTFIT_LIST_NEAT.append(OUTFIT_TRANSLATING)
+
+    CONNECTION.close()
+    return OUTFIT_LIST_NEAT
 
 
 def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
@@ -1011,8 +1083,9 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
     :param NEW_OUTFIT_INFORMATION: list
     :return: none
     """
-    global CURSOR, DATABASE_NAME, OPTIONAL_OUTFIT_DATA
+    global DATABASE_NAME, OPTIONAL_OUTFIT_DATA
     CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
 
     FILLED_INFORMATION = [
         NEW_OUTFIT_INFORMATION[0],
@@ -1100,6 +1173,7 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
     CONNECTION.commit()
     CONNECTION.close()
 
+
 # Output
 # --- VARIABLES --- #
 FIRST_RUN = True
@@ -1107,8 +1181,6 @@ DATABASE_NAME = "Fashion.db"
 
 if (pathlib.Path.cwd() / DATABASE_NAME).exists():
     FIRST_RUN = False
-
-CURSOR = CONNECTION.cursor()
 
 # Additional information tables
 OPTIONAL_CLOTHING_DATA = ("Additional_Color_2", "Additional_Color_3",
@@ -1123,7 +1195,8 @@ if __name__ == "__main__":
         setup()
     # insertNewClothing(inputNewClothing())
     # editClothing(1001, inputNewClothing())
-    deleteClothing(1007)
+    # deleteClothing(1007)
     # insertOutfit(inputOutfit())
     # deleteOutfit(1000)
     # editOutfit(1000, inputOutfit())
+    print(generateOutfit(["Pink", None, None, None, None, None, None, "Hot"]))
