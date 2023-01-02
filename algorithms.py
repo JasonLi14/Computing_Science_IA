@@ -330,18 +330,19 @@ def deleteClothing(CLOTHING_ID):
         SELECT
             Type
         FROM
-            CLOTHING
+            Clothing
         WHERE
             Clothing_ID = ?
         ;""", [CLOTHING_ID]).fetchone()
-
+    DELETING_CLOTHING_TYPE = DELETING_CLOTHING_TYPE[0]
+    print(DELETING_CLOTHING_TYPE)
     # Find outfits with this clothing
 
     # Initialize an array for outfit ids to delete
     OUTFITS_TO_DELETE = []
 
     # Check if in main outfit table
-    if DELETING_CLOTHING_TYPE in ["Top", "Bottom", "Shoes"]:
+    if DELETING_CLOTHING_TYPE in ("Top", "Bottom", "Shoes"):
         TO_DELETE = CURSOR.execute(f"""
             SELECT
                 Outfit_ID
@@ -350,10 +351,11 @@ def deleteClothing(CLOTHING_ID):
             WHERE
                 {DELETING_CLOTHING_TYPE} = ?
         ;""", [CLOTHING_ID]).fetchall()
-        OUTFITS_TO_DELETE += TO_DELETE
+        for OUTFIT_TO_DELETE in TO_DELETE:
+            OUTFITS_TO_DELETE += OUTFIT_TO_DELETE[0]
 
     # If a sweater or jacket
-    if DELETING_CLOTHING_TYPE in ["Sweater", "Jacket"]:
+    if DELETING_CLOTHING_TYPE in ("Sweater", "Jacket"):
         TO_DELETE = CURSOR.execute(f"""
             SELECT
                 Outfit_ID
@@ -362,7 +364,8 @@ def deleteClothing(CLOTHING_ID):
             WHERE
                 Clothing_ID = ?
         ;""", [CLOTHING_ID]).fetchall()
-        OUTFITS_TO_DELETE += TO_DELETE
+        for OUTFIT_TO_DELETE in TO_DELETE:
+            OUTFITS_TO_DELETE += OUTFIT_TO_DELETE[0]
 
     # If an accessory
     if DELETING_CLOTHING_TYPE == "Accessory":
@@ -375,10 +378,13 @@ def deleteClothing(CLOTHING_ID):
                 WHERE
                     Clothing_ID = ?
             ;""", [CLOTHING_ID]).fetchall()
-            OUTFITS_TO_DELETE += TO_DELETE
+            for OUTFIT_TO_DELETE in TO_DELETE:
+                OUTFITS_TO_DELETE += OUTFIT_TO_DELETE[0]
 
     # Delete the outfits
     OUTFIT_NAMES = []  # Log the outfits that will be deleted
+
+    print(OUTFITS_TO_DELETE)
     for OUTFIT in OUTFITS_TO_DELETE:
         # Find names of all the outfits to help inform user
         NAME = CURSOR.execute(f"""
@@ -410,6 +416,7 @@ def deleteClothing(CLOTHING_ID):
         ;""")
 
     CONNECTION.commit()
+    return OUTFIT_NAMES
 
 
 def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
@@ -421,7 +428,15 @@ def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
     global CURSOR
     FILLED_INFORMATION = CURSOR.execute("""
     SELECT
-        *
+        Clothing_ID,
+        Name,
+        Colo1,
+        Style1,
+        Fabric1,
+        Weather,
+        Score,
+        Link,
+        Type
     FROM
         Clothing
     WHERE
@@ -494,7 +509,13 @@ def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
     global CURSOR, OPTIONAL_OUTFIT_DATA
     FILLED_INFORMATION = CURSOR.execute("""
     SELECT
-        *
+        Name,
+        Top,
+        Bottom,
+        Shoes,
+        Comment,
+        Rating,
+        Outfit_ID 
     FROM
         Outfits
     WHERE
@@ -516,13 +537,13 @@ def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
                 {OPTIONAL_OUTFIT_DATA[i]}
             WHERE
                 Outfit_ID = ?
-        ;""", [OUTFIT_PRIMARY_KEY])
+        ;""", [OUTFIT_PRIMARY_KEY]).fetchone()
         OPTIONAL_OUTFIT_INFORMATION.append(OPTIONAL_ITEM)
 
     return FILLED_INFORMATION, OPTIONAL_OUTFIT_INFORMATION
 
 
-def updateClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
+def editClothing(CLOTHING_PRIMARY_KEY, NEW_INFORMATION):
     """
     Updates clothing with new info
     :param CLOTHING_PRIMARY_KEY: integer
@@ -660,7 +681,15 @@ def insertOutfit(OUTFIT_INFORMATION):
     # Insert information that is not null
     CURSOR.execute("""
     INSERT INTO
-        Outfits
+        Outfits (
+            Outfit_ID,
+            Name,
+            Top,
+            Bottom,
+            Shoes, 
+            Comment,
+            Rating
+        )
     VALUES (
         ?, ?, ?, ?, ?, ?, ?
     )
@@ -671,7 +700,9 @@ def insertOutfit(OUTFIT_INFORMATION):
         if not(OPTIONAL_INFORMATION[i] is None or OPTIONAL_INFORMATION[i] == "" or OPTIONAL_INFORMATION[i] == 0):
             CURSOR.execute(f"""
                 INSERT INTO
-                    {OPTIONAL_OUTFIT_DATA[i]}
+                    {OPTIONAL_OUTFIT_DATA[i]} (
+                        Outfit_ID, Clothing_ID
+                    )
                 VALUES (
                     ?, ?
                 )
@@ -900,6 +931,9 @@ def generateOutfit(SETTINGS):
         elif ITEM[1] == "Accessory":
             ACCESSORIES.append(ITEM[0])
 
+    # Make sure that jackets and sweaters can be optional
+    JACKETS.append(None)
+    SWEATERS.append(None)
     # Get combinations
 
     # Find combinations of mandatory parts
@@ -977,7 +1011,8 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
     :param NEW_OUTFIT_INFORMATION: list
     :return: none
     """
-    global CURSOR, CONNECTION, OPTIONAL_OUTFIT_DATA
+    global CURSOR, DATABASE_NAME, OPTIONAL_OUTFIT_DATA
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
 
     FILLED_INFORMATION = [
         NEW_OUTFIT_INFORMATION[0],
@@ -1017,11 +1052,11 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
         Outfits
     SET 
         Name = ?,
-        Rating = ?,
         Top = ?,
         Bottom = ?,
         Shoes = ?,
-        Comment = ?
+        Comment = ?,
+        Rating = ?
     WHERE
         Outfit_ID = ?
     ;""", FILLED_INFORMATION)
@@ -1045,7 +1080,9 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
                 # Have to insert
                 CURSOR.execute(f"""
                     INSERT INTO
-                        {OPTIONAL_OUTFIT_DATA[i]}
+                        {OPTIONAL_OUTFIT_DATA[i]} (
+                            Outfit_ID, Clothing_ID
+                        )
                     VALUES (
                         ?, ?
                     )
@@ -1061,7 +1098,7 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
                     ;""", [OUTFIT_PRIMARY_KEY])
             # else, nothing happens
     CONNECTION.commit()
-
+    CONNECTION.close()
 
 # Output
 # --- VARIABLES --- #
@@ -1071,7 +1108,6 @@ DATABASE_NAME = "Fashion.db"
 if (pathlib.Path.cwd() / DATABASE_NAME).exists():
     FIRST_RUN = False
 
-CONNECTION = sqlite3.connect(DATABASE_NAME)
 CURSOR = CONNECTION.cursor()
 
 # Additional information tables
@@ -1086,8 +1122,8 @@ if __name__ == "__main__":
     if FIRST_RUN:  # create tables
         setup()
     # insertNewClothing(inputNewClothing())
-    # updateClothing(1001, inputNewClothing())
-    # deleteClothing(1001)
+    # editClothing(1001, inputNewClothing())
+    deleteClothing(1007)
     # insertOutfit(inputOutfit())
     # deleteOutfit(1000)
-    editOutfit(1000, inputOutfit())
+    # editOutfit(1000, inputOutfit())
