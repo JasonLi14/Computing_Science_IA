@@ -448,7 +448,7 @@ def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
     SELECT
         Clothing_ID,
         Name,
-        Colo1,
+        Color1,
         Style1,
         Fabric1,
         Weather,
@@ -463,6 +463,8 @@ def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
 
     # turn clothing information into a list, not a tuple
     CLOTHING_INFORMATION = []
+    if FILLED_INFORMATION is None:  # Break function and return none if there is none at that pk
+        return None
     for INFORMATION in FILLED_INFORMATION:
         CLOTHING_INFORMATION.append(INFORMATION)
 
@@ -545,6 +547,9 @@ def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
 
     # turn clothing information into a list, not a tuple
     OUTFIT_INFORMATION = []
+
+    if FILLED_INFORMATION is None:  # Break function and return none if there is none at that pk
+        return None
     for INFORMATION in FILLED_INFORMATION:
         OUTFIT_INFORMATION.append(INFORMATION)
 
@@ -1175,6 +1180,46 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
 
 
 # Output
+def getAllClothes():
+    """
+    Get all clothes in the database
+    :return: list
+    """
+    CLOTHES = []
+    # Find last pk
+    LAST_PK = recentClothingID()
+
+    # Iterate through pks
+    for i in range(1000, LAST_PK+1):
+        CLOTHING = getExistingClothingInfo(i)
+        if CLOTHING is None:
+            continue
+        else:
+            CLOTHES.append(CLOTHING)
+
+    return CLOTHES
+
+
+def getAllOutfits():
+    """
+    Get all outfits in the database
+    :return: list
+    """
+    OUTFITS = []
+    # Find last pk
+    LAST_PK = recentOutfitID()
+
+    # Iterate through pks
+    for i in range(1000, LAST_PK + 1):
+        OUTFIT = getExistingClothingInfo(i)
+        if OUTFIT is None:
+            continue
+        else:
+            OUTFITS.append(OUTFIT)
+
+    return OUTFITS
+
+
 # --- VARIABLES --- #
 FIRST_RUN = True
 DATABASE_NAME = "Fashion.db"
@@ -1199,4 +1244,5 @@ if __name__ == "__main__":
     # insertOutfit(inputOutfit())
     # deleteOutfit(1000)
     # editOutfit(1000, inputOutfit())
-    print(generateOutfit(["Pink", None, None, None, None, None, None, "Hot"]))
+    # print(generateOutfit(["Pink", None, None, None, None, None, None, "Hot"]))
+    print(getAllClothes(), getAllOutfits())

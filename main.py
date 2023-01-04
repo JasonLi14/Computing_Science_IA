@@ -26,7 +26,7 @@ if (Path.cwd() / DATABASE_NAME).exists():
 @app.route('/', methods=["GET", "POST"])  # the application immediately routes to the index page
 def index():
     ALERT = ""
-    return render_template("index.html")
+    return render_template("index.html", clothes=algorithms.getAllClothes())
 
 
 # MAIN PROGRAM CODE #
