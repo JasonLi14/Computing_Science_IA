@@ -142,8 +142,37 @@ def inputNewClothing():
     return CLOTHING_INFORMATION
 
 
-def inputEditClothing():
-    pass
+def formatClothingInput(CLOTHING_INFO):
+    """
+    Formats the clothing info so that color 3 cannot be filled if color 2 is not
+    :param CLOTHING_INFO: list
+    :return: list
+    """
+    # Color
+    for i in range(len(CLOTHING_INFO[1]) - 1, -1, -1):
+        if CLOTHING_INFO[1][i] is None or CLOTHING_INFO[1][i] == "None" or CLOTHING_INFO[1][i] == "":
+            CLOTHING_INFO[1].pop(i)
+    # Get to length of 3
+    while len(CLOTHING_INFO[1]) < 3:
+        CLOTHING_INFO[1].append(None)
+
+    # Styles
+    for i in range(len(CLOTHING_INFO[2]) - 1, -1, -1):
+        if CLOTHING_INFO[2][i] is None or CLOTHING_INFO[2][i] == "None" or CLOTHING_INFO[2][i] == "":
+            CLOTHING_INFO[2].pop(i)
+    # Get to length of 2
+    while len(CLOTHING_INFO[2]) < 2:
+        CLOTHING_INFO[2].append(None)
+
+    # Fabrics
+    for i in range(len(CLOTHING_INFO[3]) - 1, -1, -1):
+        if CLOTHING_INFO[3][i] is None or CLOTHING_INFO[3][i] == "None" or CLOTHING_INFO[3][i] == "":
+            CLOTHING_INFO[3].pop(i)
+    # Get to length of 2
+    while len(CLOTHING_INFO[3]) < 2:
+        CLOTHING_INFO[3].append(None)
+
+    return CLOTHING_INFO
 
 
 def inputOutfit():
@@ -1220,6 +1249,54 @@ def getAllOutfits():
     return OUTFITS
 
 
+def getClothingWithID(ID):
+    """
+    Get a clothing name with the id
+    :param ID: int
+    :return: none
+    """
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
+
+    CLOTHING = CURSOR.execute("""
+        SELECT
+            Name
+        FROM
+            Clothing
+        WHERE
+            Clothing_ID = ?
+    ;""", [ID]).fetchone()
+
+    CONNECTION.close()
+
+    return CLOTHING[0]
+
+
+def getOutfitWithID(ID):
+    """
+    Get a clothing name with the id
+    :param ID: int
+    :return: none
+    """
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
+
+    OUTFIT = CURSOR.execute("""
+        SELECT
+            Name
+        FROM
+            Outfits
+        WHERE
+            Outfit_ID = ?
+    ;""", [ID]).fetchone()
+
+    CONNECTION.close()
+
+    return OUTFIT[0]
+
+
 # --- VARIABLES --- #
 FIRST_RUN = True
 DATABASE_NAME = "Fashion.db"
@@ -1245,4 +1322,4 @@ if __name__ == "__main__":
     # deleteOutfit(1000)
     # editOutfit(1000, inputOutfit())
     # print(generateOutfit(["Pink", None, None, None, None, None, None, "Hot"]))
-    print(getAllClothes(), getAllOutfits())
+    # print(getAllClothes(), getAllOutfits())

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/custom.css') }}">
+    <title>Fashion Program</title>
+  </head>
+  <body>
+    <!-- navbar -->
+    <nav class="navbar navbar-expand-xl navbar-light">
+      <div class="container-fluid">
+        <div class="navbar-brand">Fashion Program</div>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Clothing</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Outfits</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- back button -->
+    <a href="/" role="button" class="btn btn-danger">Back</a>
+
+    <!-- edit clothing -->
+    <div class="container-fluid">
+        <div class="jumbotron m-3">
+            <h1 class="display-4">Edit clothing #{{existing_info[0]}}: {{existing_info[1]}}</h1>
+            <p class="lead">Edit the clothing by filling the form below! </p>
+            <hr>
+            <form class="form-horizontal" method="post" action="/edit/{{existing_info[0]}}">
+
+                <!-- Name -->
+                <div class="form-row white-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="clothingName">
+                      Name*: </label>
+                  <div class="col-sm-10">
+                      <input type="text" class="form-control" id="clothingName" placeholder="Enter name" required
+                             name="clothing name" value="{{existing_info[1]}}">
+                  </div>
+                </div>
+                <!-- Type of article -->
+                <div class="form-row light-gray-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="clothingType">
+                      Type of Clothing*: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="clothingType" required
+                              name="clothing type">
+                          {% for clothing_type in clothing_types %}
+                            {% if existing_info[8] is not none %}
+                                {% if clothing_type == existing_info[8] %}
+                                    <option selected>{{clothing_type}}</option>
+                                {% else %}
+                                    <option>{{clothing_type}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{clothing_type}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Primary Color -->
+                <div class="form-row red-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="firstColor">
+                      First Color*: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="firstColor" required name="first color">
+                          {% for color in colors %}
+                            {% if existing_info[2][0] is not none %}
+                                {% if color == existing_info[2][0] %}
+                                    <option selected>{{color}}</option>
+                                {% else %}
+                                    <option>{{color}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{color}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Secondary Color -->
+                <div class="form-row red-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="secondColor">
+                      Second Color: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="secondColor" name="second color">
+                          {% for color in colors %}
+                            {% if existing_info[2][1] is not none %}
+                                {% if color == existing_info[2][1] %}
+                                    <option selected>{{color}}</option>
+                                {% else %}
+                                    <option>{{color}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{color}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Tertiary Color -->
+                <div class="form-row red-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="thirdColor">
+                      Third Color: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="thirdColor" name="third color">
+                          {% for color in colors %}
+                            {% if existing_info[2][2] is not none %}
+                                {% if color == existing_info[2][2] %}
+                                    <option selected>{{color}}</option>
+                                {% else %}
+                                    <option>{{color}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{color}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+
+                <!-- Primary Style -->
+                <div class="form-row orange-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="firstStyle">
+                      First Style*: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="firstStyle" required name="first style">
+                          {% for style in styles %}
+                            {% if existing_info[3][0] is not none %}
+                                {% if style == existing_info[3][0] %}
+                                    <option selected>{{style}}</option>
+                                {% else %}
+                                    <option>{{style}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{style}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Secondary Style -->
+                <div class="form-row orange-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="secondStyle">Second Style: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="secondStyle" name="second style">
+                          {% for style in styles %}
+                            {% if existing_info[3][1] is not none %}
+                                {% if style == existing_info[3][1] %}
+                                    <option selected>{{style}}</option>
+                                {% else %}
+                                    <option>{{style}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{style}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Primary Fabric -->
+                <div class="form-row yellow-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="firstFabric">
+                      First Fabric*: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="firstFabric" required name="first fabric">
+                          {% for fabric in fabrics %}
+                            {% if existing_info[4][0] is not none %}
+                                {% if fabric == existing_info[4][0] %}
+                                    <option selected>{{fabric}}</option>
+                                {% else %}
+                                    <option>{{fabric}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{fabric}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Secondary Fabric -->
+                <div class="form-row yellow-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="secondFabric">
+                      Second Fabric: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="secondFabric" name="second fabric">
+                          {% for fabric in fabrics %}
+                            {% if existing_info[4][1] is not none %}
+                                {% if fabric == existing_info[4][1] %}
+                                    <option selected>{{fabric}}</option>
+                                {% else %}
+                                    <option>{{fabric}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{fabric}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Weather -->
+                <div class="form-row green-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="clothingWeather">
+                      Weather*: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="clothingWeather" required name="weather">
+                          {% for weatherType in weather %}
+                            {% if existing_info[5] is not none %}
+                                {% if weatherType == existing_info[5] %}
+                                    <option selected>{{weatherType}}</option>
+                                {% else %}
+                                    <option>{{weatherType}}</option>
+                                {% endif %}
+                            {% else %}
+                                <option>{{weatherType}}</option>
+                            {% endif %}
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Score -->
+                <div class="form-row turquoise-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="clothingScore">
+                      Enter score (out of 10)*: </label>
+                  <div class="col-sm-10">
+                      <input type="number" min=0 max=10 class="form-control" id="clothingScore"
+                             placeholder="Enter score" required name="clothing score" value="{{existing_info[6]}}">
+                  </div>
+                </div>
+                <!-- Link to Image -->
+                <div class="form-row magenta-bg">
+                  <label class="control-label col-sm-2 text-right font-weight-bold mt-2" for="imageLink">
+                      Link to image*: </label>
+                  <div class="col-sm-10">
+                      <input type="text" class="form-control" id="imageLink" placeholder="Enter image link"
+                             required name="image link" value="{{existing_info[7]}}">
+                  </div>
+                </div>
+                <p></p>
+                <input type="submit" class="btn btn-primary" value="Edit">
+            </form>
+            <small class="text-danger">*Required</small>
+            {% if alert != "" %}
+                <p class="text text-danger">{{alert}}</p>
+            {% endif %}
+        </div>
+    </div>
+  </body>
+</html>

@@ -13,3 +13,51 @@ nav {
 
 .text-primary {
 }
+
+.white-bg {
+    background-color: #f1f1f1;
+}
+
+.light-gray-bg {
+    background-color: #a1a1a1;
+}
+
+.dark-gray-bg {
+    background-color: #555555;
+}
+
+.red-bg {
+    background-color: #f17a7a;
+}
+
+.orange-bg {
+    background-color: #f1c28a;
+}
+
+.yellow-bg {
+    background-color: #f1f18d;
+}
+
+.green-bg {
+    background-color: #a1f1a1;
+}
+
+.turquoise-bg {
+    background-color: #a1cfcf;
+}
+
+.blue-bg {
+    background-color: #9a9af1;
+}
+
+.indigo-bg {
+    background-color: #c19af1;
+}
+
+.violet-bg {
+    background-color: #f19af1;
+}
+
+.magenta-bg {
+    background-color: #f19ab1;
+}
