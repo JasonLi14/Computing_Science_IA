@@ -593,6 +593,8 @@ def getExistingOutfitInfo(OUTFIT_PRIMARY_KEY):
             WHERE
                 Outfit_ID = ?
         ;""", [OUTFIT_PRIMARY_KEY]).fetchone()
+        if OPTIONAL_ITEM is not None:
+            OPTIONAL_ITEM = OPTIONAL_ITEM[0]
         OPTIONAL_OUTFIT_INFORMATION.append(OPTIONAL_ITEM)
 
     CONNECTION.close()
@@ -1209,7 +1211,7 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
 
 
 # Output
-def getAllClothes():
+def getAllClothes(sortByType=False):
     """
     Get all clothes in the database
     :return: list
@@ -1234,20 +1236,60 @@ def getAllOutfits():
     Get all outfits in the database
     :return: list
     """
-    OUTFITS = []
-    # Find last pk
-    LAST_PK = recentOutfitID()
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
 
-    # Iterate through pks
-    for i in range(1000, LAST_PK + 1):
-        FILLED_PARTS, OPTIONAL_PARTS = getExistingOutfitInfo(i)
-        if FILLED_PARTS is None:
-            continue
-        else:
-            OUTFIT = FILLED_PARTS + OPTIONAL_PARTS
-            OUTFITS.append(OUTFIT)
+    # Call all the outfits
+    OUTFITS = CURSOR.execute("""
+    SELECT
+        Outfit_ID,
+        Name,
+        Top,
+        Bottom,
+        Shoes,
+        Comment,
+        Rating
+    FROM
+        Outfits
+    ORDER BY
+        Rating DESC
+    ;""").fetchall()
 
-    return OUTFITS
+    FULL_OUTFITS = []
+    # Find side tables
+    for OUTFIT in OUTFITS:
+        ID = OUTFIT[0]
+        # find side table information
+        FILLED, OPTIONAL = getExistingOutfitInfo(ID)
+        OUTFIT_COPY = list(OUTFIT)
+        OUTFIT_COPY.insert(5, OPTIONAL[0])
+        OUTFIT_COPY.insert(6, OPTIONAL[1])
+        OUTFIT_COPY.insert(7, OPTIONAL[2:])
+        FULL_OUTFITS.append(OUTFIT_COPY)
+    CONNECTION.close()
+    return FULL_OUTFITS
+
+
+def getClothingImages(ID):
+    """
+    Find clothing images
+    :return:
+    """
+    global DATABASE_NAME
+    CONNECTION = sqlite3.connect(DATABASE_NAME)
+    CURSOR = CONNECTION.cursor()
+
+    IMAGE = CURSOR.execute("""
+        SELECT
+            Link
+        FROM
+            Clothing
+        WHERE
+            Clothing_ID = ?
+    ;""", [ID]).fetchone()[0]
+    CONNECTION.close()
+    return IMAGE
 
 
 def getClothingWithID(ID):
@@ -1270,7 +1312,6 @@ def getClothingWithID(ID):
     ;""", [ID]).fetchone()
 
     CONNECTION.close()
-
     return CLOTHING[0]
 
 
