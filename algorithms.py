@@ -1240,10 +1240,11 @@ def getAllOutfits():
 
     # Iterate through pks
     for i in range(1000, LAST_PK + 1):
-        OUTFIT = getExistingClothingInfo(i)
-        if OUTFIT is None:
+        FILLED_PARTS, OPTIONAL_PARTS = getExistingOutfitInfo(i)
+        if FILLED_PARTS is None:
             continue
         else:
+            OUTFIT = FILLED_PARTS + OPTIONAL_PARTS
             OUTFITS.append(OUTFIT)
 
     return OUTFITS
@@ -1323,3 +1324,4 @@ if __name__ == "__main__":
     # editOutfit(1000, inputOutfit())
     # print(generateOutfit(["Pink", None, None, None, None, None, None, "Hot"]))
     # print(getAllClothes(), getAllOutfits())
+    print(getAllOutfits())

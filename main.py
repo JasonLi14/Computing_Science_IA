@@ -124,6 +124,19 @@ def editClothing(ID):  # to edit clothing
                            fabrics=FABRICS, weather=WEATHER, clothing_types=CLOTHING_TYPES, alert=ALERT)
 
 
+@app.route("/outfits/")
+def outfits():  # outfit page
+    global OUTFIT_CHOSEN_CLOTHES
+    ALERT = ""
+    if request.form:
+        # get the info
+        OUTFIT_NAME = request.form.get("outfit name")
+        TOP = request.form.get("top id")
+        BOTTOM = request.form.get("bottom")
+
+    return render_template("outfits.html", alert=ALERT, chosen=OUTFIT_CHOSEN_CLOTHES)
+
+
 @app.route("/delete/<ID>")
 def deleteClothing(ID):  # to delete clothing
     CLOTHING_NAME = algorithms.getClothingWithID(ID)
@@ -141,6 +154,9 @@ FABRICS = ("None", 'Canvas', 'Chenille', 'Chiffon', 'Cotton', 'Crepe', 'Denim', 
            'Nylon', 'Polyester', 'Satin', 'Silk', 'Spandex', 'Velvet', 'Wool')
 WEATHER = ("None", "Hot", "Warm", "Neutral", "Cool", "Cold")
 CLOTHING_TYPES = ("None", "Top", "Bottom", "Shoes", "Accessory", "Sweater", "Jacket")
+
+# For outfit creation
+OUTFIT_CHOSEN_CLOTHES = []
 
 # MAIN PROGRAM CODE #
 if __name__ == "__main__":
