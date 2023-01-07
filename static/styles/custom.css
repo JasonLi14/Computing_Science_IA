@@ -61,3 +61,22 @@ nav {
 .magenta-bg {
     background-color: #f19ab1;
 }
+
+mark {
+    color: black;
+    background-color: white;
+}
+
+.carousel-control-prev {
+    color: white;
+    background-color: black;
+}
+
+.carousel-control-next {
+    color: white;
+    background-color: black;
+}
+
+.square-img {
+    aspect-ratio: 1/1;
+}

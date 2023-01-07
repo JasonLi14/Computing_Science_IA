@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+      <!-- Custom CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/custom.css') }}">
+    <title>Fashion Program</title>
+  </head>
+  <body>
+    <!-- navbar -->
+    <nav class="navbar navbar-expand-xl navbar-light">
+      <div class="container-fluid">
+        <div class="navbar-brand">Fashion Program</div>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Clothing</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{url_for('outfits')}}">Outfits</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- back button -->
+    <a href="{{url_for('outfits')}}" role="button" class="btn btn-danger my-2">Back</a>
+
+    <!-- generate outfit -->
+    <div class="container-fluid">
+        <div class="jumbotron m-3">
+            <h1 class="display-4">Generate Outfits</h1>
+            <p class="lead">You can create or generate outfits by filling in the fields below.</p>
+            <hr>
+            <form class="form-horizontal" method="post" action="/generate_outfit">
+                <!-- Primary Color -->
+                <div class="form-row red-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="firstColor">
+                      First Color: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="firstColor" required name="first color">
+                          {% for color in colors %}
+                            <option>{{color}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Secondary Color -->
+                <div class="form-row red-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="secondColor">
+                      Second Color: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="secondColor" name="second color">
+                          {% for color in colors %}
+                            <option>{{color}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Tertiary Color -->
+                <div class="form-row red-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="thirdColor">
+                      Third Color: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="thirdColor" name="third color">
+                          {% for color in colors %}
+                            <option>{{color}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+
+                <!-- Primary Style -->
+                <div class="form-row orange-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="firstStyle">
+                      First Style: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="firstStyle" required name="first style">
+                          {% for style in styles %}
+                            <option>{{style}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Secondary Style -->
+                <div class="form-row orange-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="secondStyle">Second Style: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="secondStyle" name="second style">
+                          {% for style in styles %}
+                            <option>{{style}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Primary Fabric -->
+                <div class="form-row yellow-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="firstFabric">
+                      First Fabric: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="firstFabric" required name="first fabric">
+                          {% for fabric in fabrics %}
+                            <option>{{fabric}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Secondary Fabric -->
+                <div class="form-row yellow-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="secondFabric">
+                      Second Fabric: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="secondFabric" name="second fabric">
+                          {% for fabric in fabrics %}
+                            <option>{{fabric}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <!-- Weather -->
+                <div class="form-row green-bg">
+                  <label class="control-label col-sm-2 text-right mt-2" for="clothingWeather">
+                      Weather: </label>
+                  <div class="col-sm-10">
+                      <select class="form-control" id="clothingWeather" required name="weather">
+                          {% for weatherType in weather %}
+                            <option>{{weatherType}}</option>
+                          {% endfor %}
+                      </select>
+                  </div>
+                </div>
+                <input type="submit" class="btn btn-primary my-2" value="Generate">
+            </form>
+            <br>
+            {% if alert != "" %}
+                <p class="text text-danger">{{alert}}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- outfits table -->
+    {% if outfits is not none%}
+        {% if outfits|length != 0 %}
+        <div class="container-fluid">
+          <div class="jumbotron m-3">
+            <h1 class="display-4">Outfits</h1>
+              <p class="lead">These are the outfits in the database.</p>
+              <table class="table">
+                  <thead class="thead-light">
+                      <tr>
+                          <th class="col-sm-1">Outfit Name</th>
+                          <th class="col-sm-1"> Top</th>
+                          <th class="col-sm-1">Bottom</th>
+                          <th class="col-sm-1">Shoes</th>
+                          <th class="col-sm-1">Sweater</th>
+                          <th class="col-sm-1">Jacket</th>
+                          <th class="col-sm-2">Accessories</th>
+                          <th class="col-sm-1">Comment</th>
+                          <th>Rating</th>
+                          <th class="col-sm-1">Edit/Delete</th>
+                      </tr>
+                  </thead>
+                  {% set n = 0 %}
+                  {% for outfit in outfits %}
+                      <tr>
+                          <!-- Name -->
+                          <td>{{outfit[0]}}</td>
+                          <!-- Top -->
+                          <td>
+                              <div>
+                                <p>{{outfit[1][0]}}: {{outfit[1][1]}}</p> <br>
+                                <img src="{{outfit[1][2]}}" alt="{{outfit[1][1]}}" class = "w-75">
+                              </div>
+                          </td>
+                          <!-- Bottom -->
+                          <td>
+                              <div>
+                                <p>{{outfit[2][0]}}: {{outfit[2][1]}}</p> <br>
+                                <img src="{{outfit[2][2]}}" alt="{{outfit[2][1]}}" class = "w-75">
+                              </div>
+                          </td>
+                          <!-- Shoes -->
+                          <td>
+                              <div>
+                                <p>{{outfit[3][0]}}: {{outfit[3][1]}}</p> <br>
+                                <img src="{{outfit[3][2]}}" alt="{{outfit[3][1]}}" class = "w-75">
+                              </div>
+                          </td>
+                          <!-- Sweater -->
+                          <td>
+                              {% if outfit[4] is not none %}
+                                  <div>
+                                    <p>{{outfit[4][0]}}: {{outfit[4][1]}}</p> <br>
+                                    <img src="{{outfit[4][2]}}" alt="{{outfit[4][1]}}" class = "w-75">
+                                  </div>
+                              {% endif %}
+                          </td>
+                          <!-- Jacket -->
+                          <td>
+                              {% if outfit[5] is not none %}
+                                  <div>
+                                    <p>{{outfit[5][0]}}: {{outfit[5][1]}}</p> <br>
+                                    <img src="{{outfit[5][2]}}" alt="{{outfit[5][1]}}" class = "w-75">
+                                  </div>
+                              {% endif %}
+                          </td>
+                          <!-- Accessories -->
+                          <td>
+                              <div id="iAccessoryCarousel" class="carousel slide" data-ride="carousel">
+                                  <div class="carousel-inner">
+                                      {% for i in range(outfit[6]|length) %}
+                                        {% if outfit[6][i] is not none %}
+                                          {% if i == 0 %}
+                                            <div class="carousel-item active">
+                                              <img src="{{outfit[6][i][2]}}" alt="{{outfit[6][i][1]}}" class="d-block w-100 square-img">
+                                              <div class="carousel-caption">
+                                                <p><mark>{{outfit[6][i][0]}}: {{outfit[6][i][1]}}</mark></p>
+                                              </div>
+                                            </div>
+                                          {% else %}
+                                            <div class="carousel-item">
+                                              <img src="{{outfit[6][i][2]}}" alt="{{outfit[6][i][1]}}" class="d-block w-100 square-img">
+                                              <div class="carousel-caption">
+                                                <p><mark>{{outfit[6][i][0]}}: {{outfit[6][i][1]}}</mark></p>
+                                              </div>
+                                            </div>
+                                          {% endif %}
+                                        {% endif %}
+                                      {% endfor %}
+                                      <a class="carousel-control-prev" href="#iAccessoryCarousel" role="button" data-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="sr-only">Previous</span>
+                                      </a>
+                                      <a class="carousel-control-next" href="#iAccessoryCarousel" role="button" data-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="sr-only">Next</span>
+                                      </a>
+                                  </div>
+                              </div>
+                          </td>
+                          <!-- Comment -->
+                          <td>{{outfit[7]}}</td>
+                          <!-- Rating -->
+                          <td>{{outfit[8]}}</td>
+                          <!-- Add outfit -->
+                          <td><ul style="list-style-type:none; padding-left: 0">
+                              <li>
+                                <a href="/addOutfits/{{original_outfits[n]}}"
+                                   class="btn btn-success w-100 ml-1" role="button">Add</a>
+                              </li>
+                          </ul></td>
+                      </tr>
+                    {% set n = n + 1 %}
+                  {% endfor %}
+                </table>
+          </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
+  <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  </body>
+</html>

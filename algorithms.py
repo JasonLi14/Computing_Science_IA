@@ -1103,7 +1103,7 @@ def generateOutfit(SETTINGS):
             OUTFITS[i][0][5].append(None)
 
         # Create a new list [Name, top, bottom, shoes, sweater, jacket, accessories, Comment, Rating
-        OUTFIT_TRANSLATING = [f"Generated Outfit {i}", OUTFITS[i][0][0], OUTFITS[i][0][1], OUTFITS[i][0][2],
+        OUTFIT_TRANSLATING = [f"Generated Outfit {i + 1}", OUTFITS[i][0][0], OUTFITS[i][0][1], OUTFITS[i][0][2],
                               OUTFITS[i][0][3], OUTFITS[i][0][4], OUTFITS[i][0][5], ", ".join(SETTINGS_USED),
                               OUTFITS[i][1]]
         OUTFIT_LIST_NEAT.append(OUTFIT_TRANSLATING)
@@ -1172,6 +1172,7 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
 
     # Side tables
     # Update other tables
+    print(OPTIONAL_INFORMATION)
     for i in range(len(OPTIONAL_OUTFIT_DATA)):
         if OPTIONAL_INFORMATION[i] is not None and OPTIONAL_INFORMATION[i] != "" and OPTIONAL_INFORMATION[i] != 0:
             # columns exist
@@ -1211,7 +1212,7 @@ def editOutfit(OUTFIT_PRIMARY_KEY, NEW_OUTFIT_INFORMATION):
 
 
 # Output
-def getAllClothes(sortByType=False):
+def getAllClothes():
     """
     Get all clothes in the database
     :return: list
