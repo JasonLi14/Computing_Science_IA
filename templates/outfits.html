@@ -150,7 +150,7 @@
                       <!-- Edit and Delete -->
                       <td><ul style="list-style-type:none; padding-left: 0">
                           <li>
-                            <a href="{{url_for('editOutfit', chosen_info=original_outfit[loop.index])}}"
+                            <a href="{{url_for('editOutfit', chosen_info=original_outfit[loop.index-1])}}"
                                class="btn btn-info w-100 ml-1" role="button">Edit</a>
                           </li>
                           <li>
