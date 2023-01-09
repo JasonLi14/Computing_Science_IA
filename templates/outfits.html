@@ -64,7 +64,6 @@
                   </tr>
               </thead>
               <!-- Display clothes -->
-              {% set n = 0 %}
               {% for outfit in outfits %}
                   <tr>
                       <!-- ID -->
@@ -151,7 +150,7 @@
                       <!-- Edit and Delete -->
                       <td><ul style="list-style-type:none; padding-left: 0">
                           <li>
-                            <a href="{{url_for('editOutfit', chosen_info=original_outfit[n])}}"
+                            <a href="{{url_for('editOutfit', chosen_info=original_outfit[loop.index])}}"
                                class="btn btn-info w-100 ml-1" role="button">Edit</a>
                           </li>
                           <li>
@@ -159,7 +158,6 @@
                           </li>
                       </ul></td>
                   </tr>
-                {% set n = n + 1 %}
               {% endfor %}
             </table>
       </div>
