@@ -611,7 +611,7 @@ def generateOutfits():
                                  SECOND_FABRIC, CLOTHING_WEATHER]
         OUTFITS = algorithms.generateOutfit(GENERATING_PARAMETERS)
         if OUTFITS is not None:
-            OUTFITS=formatOutfits(OUTFITS)
+            OUTFITS = formatOutfits(OUTFITS)
         ORIGINAL_OUTFITS = algorithms.generateOutfit(GENERATING_PARAMETERS)
         # See if no outfits were generated
         if len(OUTFITS) == 0:
