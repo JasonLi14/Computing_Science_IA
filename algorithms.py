@@ -387,7 +387,7 @@ def deleteClothing(CLOTHING_ID):
     OUTFITS_TO_DELETE = []
 
     # Check if in main outfit table
-    if DELETING_CLOTHING_TYPE in ("Top", "Bottom", "Shoes"):
+    if DELETING_CLOTHING_TYPE in ("Top", "Bottom", "Shoes"):  # Use this format to get the right table
         TO_DELETE = CURSOR.execute(f"""
             SELECT
                 Outfit_ID
@@ -396,8 +396,8 @@ def deleteClothing(CLOTHING_ID):
             WHERE
                 {DELETING_CLOTHING_TYPE} = ?
         ;""", [CLOTHING_ID]).fetchall()
-        for OUTFIT_TO_DELETE in TO_DELETE:
-            OUTFITS_TO_DELETE += OUTFIT_TO_DELETE[0]
+        for OUTFIT_TO_DELETE in TO_DELETE:  # Add to a list to keep track of outfits to delete
+            OUTFITS_TO_DELETE += [OUTFIT_TO_DELETE[0]]
 
     # If a sweater or jacket
     if DELETING_CLOTHING_TYPE in ("Sweater", "Jacket"):
@@ -410,7 +410,7 @@ def deleteClothing(CLOTHING_ID):
                 Clothing_ID = ?
         ;""", [CLOTHING_ID]).fetchall()
         for OUTFIT_TO_DELETE in TO_DELETE:
-            OUTFITS_TO_DELETE += OUTFIT_TO_DELETE[0]
+            OUTFITS_TO_DELETE += [OUTFIT_TO_DELETE[0]]
 
     # If an accessory
     if DELETING_CLOTHING_TYPE == "Accessory":
@@ -424,7 +424,7 @@ def deleteClothing(CLOTHING_ID):
                     Clothing_ID = ?
             ;""", [CLOTHING_ID]).fetchall()
             for OUTFIT_TO_DELETE in TO_DELETE:
-                OUTFITS_TO_DELETE += OUTFIT_TO_DELETE[0]
+                OUTFITS_TO_DELETE += [OUTFIT_TO_DELETE[0]]
 
     # Delete the outfits
     OUTFIT_NAMES = []  # Log the outfits that will be deleted
@@ -473,6 +473,8 @@ def getExistingClothingInfo(CLOTHING_PRIMARY_KEY):
     global DATABASE_NAME
     CONNECTION = sqlite3.connect(DATABASE_NAME)
     CURSOR = CONNECTION.cursor()
+
+    # Find information that is always filled
     FILLED_INFORMATION = CURSOR.execute("""
     SELECT
         Clothing_ID,
@@ -1366,4 +1368,4 @@ if __name__ == "__main__":
     # editOutfit(1000, inputOutfit())
     # print(generateOutfit(["Pink", None, None, None, None, None, None, "Hot"]))
     # print(getAllClothes(), getAllOutfits())
-    print(getAllOutfits())
+    # print(getAllOutfits())
